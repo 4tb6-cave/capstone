@@ -1,7 +1,7 @@
 # Makefile
 # From https://danielkaes.wordpress.com/2009/03/14/compiling-latex-documents-using-makefiles/
 
-PROJECT=DevelopmentPlan
+PROJECT=ProjectGoalsAndDevelopmentProcess
 TEX=pdflatex
 BIBTEX=bibtex
 BUILDTEX=$(TEX) $(PROJECT).tex
