@@ -1,0 +1,24 @@
+rgb:
+  resolution: 1080p
+  encoding: mjpeg
+  lossless: false
+  quality: 97
+mono:
+  resolution: 720p
+  encoding: mjpeg
+  lossless: false
+  quality: 97
+imu:
+  frequency: 200
+  batchThreshold: 10
+  maxBatchReports: 20
+stereo:
+  medianFilterOn: false
+  medianFilterKernel: 3x3
+  extendedDisparity: true
+  subpixel: false
+  confidenceThreshold: 200
+  leftRightCheck: 5
+laserDotIntensity: 1
+floodlightIntensity: 0
+fps: 30

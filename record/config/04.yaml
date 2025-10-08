@@ -1,0 +1,8 @@
+preset: 4
+fps: 20
+mono:
+  lossless: true
+laserDotIntensity: 0.5
+stereo:
+  subpixel: true
+  extendedDisparity: false

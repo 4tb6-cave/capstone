@@ -1,0 +1,30 @@
+name: pi_record_view
+
+services:
+  driver:
+    extends:
+      file: compose.yaml
+      service: driver
+  bagger:
+    extends:
+      file: compose.yaml
+      service: bagger
+  viewer:
+    image: osrf/ros:humble-desktop
+    # networking and IPC for ROS 2
+    network_mode: host
+    ipc: host
+    # graphics
+    privileged: true
+    environment:
+      # Allows graphical programs in the container.
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      # Allows graphical programs in the container.
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY:-$HOME/.Xauthority}:/root/.Xauthority
+      - ../rviz_files:/rviz_files
+    # entry
+    command: rviz2 -d /rviz_files/oak_d_pointcloud.rviz

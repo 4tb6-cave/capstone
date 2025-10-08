@@ -1,0 +1,12 @@
+name: pi_record_passive
+
+services:
+  driver:
+    extends:
+      file: compose.yaml
+      service: driver
+    command: ros2 launch /launch/rgbd_pcl.launch.py params_file:=/config/passive_stereo.yaml
+  bagger:
+    extends:
+      file: compose.yaml
+      service: bagger

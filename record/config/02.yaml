@@ -1,0 +1,7 @@
+preset: 2
+fps: 20
+mono:
+  lossless: true
+stereo:
+  subpixel: true
+  extendedDisparity: false

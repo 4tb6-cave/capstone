@@ -1,0 +1,43 @@
+name: pi_record
+
+services:
+  driver:
+    image: depthai_driver
+    build:
+      context: depthai_driver
+      args:
+        ROS_DISTRO: humble
+    # INteractive shell
+    stdin_open: true
+    tty: true
+    # networking and IPC for ROS 2
+    network_mode: host
+    ipc: host
+    # access to usb
+    volumes: 
+      - /dev/bus/usb:/dev/bus/usb
+      - ./depthai_driver/launch:/launch
+      - ./depthai_driver/config:/config
+    device_cgroup_rules: 
+      - 'c 189:* rmw'
+    # entry
+    command: ros2 launch /launch/rgbd_pcl.launch.py params_file:=/config/filtered.yaml
+  bagger:
+    image: data_recording
+    build:
+      context: data_recording
+      args:
+        ROS_DISTRO: humble
+    # INteractive shell
+    stdin_open: true
+    tty: true
+    # networking and IPC for ROS 2
+    network_mode: host
+    ipc: host
+    # data storage
+    volumes:
+      - ./data_recording/data:/data
+    # entry
+    working_dir: /data
+    command: ros2 bag record /oak/rgb/image_raw/compressed /oak/right/image_raw/compressed /oak/left/image_raw/compressed /oak/stereo/image_raw /oak/imu/data
+  

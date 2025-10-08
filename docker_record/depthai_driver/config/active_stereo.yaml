@@ -1,0 +1,12 @@
+/oak:
+  ros__parameters:
+    camera:
+      # laser on
+      i_laser_dot_brightness: 800
+      i_nn_type: none
+    left:
+      i_publish_topic: true
+    right:
+      i_publish_topic: true
+    stereo:
+      i_subpixel: true
