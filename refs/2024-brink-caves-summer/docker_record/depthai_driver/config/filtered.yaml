@@ -1,0 +1,22 @@
+/oak:
+  ros__parameters:
+    camera:
+      # laser on
+      i_laser_dot_brightness: 800
+      i_nn_type: none
+      #i_pipeline_type: rgbd
+    left:
+      i_publish_topic: true
+    right:
+      i_publish_topic: true
+    stereo:
+      i_publish_topic: true
+      # i_enable_lazy_publisher: true
+
+      i_subpixel: true
+      i_extended_disp: false
+      i_enable_decimation_filter: true
+      i_enable_speckle_filter: true
+      i_enable_spatial_filter: true
+      i_enable_temporal_filter: false
+      i_stereo_conf_threshold: 200

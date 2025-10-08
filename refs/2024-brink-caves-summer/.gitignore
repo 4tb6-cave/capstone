@@ -1,0 +1,4 @@
+__pycache__/
+depthai_samples/
+venv
+data*
