@@ -54,7 +54,51 @@ is summarized as part of the developer plan.}
 
 \section{Goals}
 
+\subsection{Create a 3D model of a tight space with little to no natural light}
+
+The primary goal of the project is to make accurate models of crevice caves. These often have
+no light from the outside and require the caver to bring their own lighting. The space is also
+constrained, often narrowing to passages not much larger than what a person can pass through.
+The exact format of the output is not yet determined but could be a point cloud or a 3D mesh.
+
+\subsection{Total cost of project is under \$750}
+
+Typically, professional systems for mapping spaces use 3D Li-DAR scanners and cost multiple
+thousands of dollars. The total cost of the sensors and hardware used needs to be limited for the
+requirements of the capstone, but keeping a low cost would be an important goal regardless of this.
+We will be able to reuse equipment purchased by a previous capstone group, which will lower our
+expenses, but even if the sensors we already have are included in the budget, the cost should remain
+well under \$750. The goal is to lower the barrier to entry for these types of mapping tasks while
+maintaining a reasonable level of accuracy.
+
+\subsection{The operator's ability to explore crevice caves is not hindered}
+
+Spelunking is a physically demanding activity. The system should be wearable by the user in a
+way that does not impede their ability to navigate through challenging caves. The space that the
+system uses should be small and the components be located to minimize disruption of the caver’s
+experience. The system should also be light, to avoid fatiguing the user, and the battery charge
+should last long enough to avoid having to halt a caving session for recharging.
+
+\subsection{Use of the system does not pose any danger to the operator or others}
+
+There should be no risks to the user caused by the mapping system. Specifically, the system
+should not decrease the effectiveness of existing safety equipment such as harnesses or helmets.
+Furthermore, the batteries should be stored in a secure manner such that a fall does not cause
+further issues related to battery safety . This is related to the previous goal, but the focus of this goal is on the safety of the user and any others who could be affected.
+
 \section{Stretch Goals}
+
+\subsection{Local Data Processing}
+Implement the capability of processing the collected data from the sensors on the system in real time.
+
+\subsection{Camera Improvements}
+Design a camera mounting system with 30° range of motion, with 1° micro-movement via an interface. Add a RGB camera to capture color information to generate colored 3D models.
+
+\subsection{Phone Application}
+Develop an application to access previously made images and 3D mappings.
+
+\subsection{Machine Learning}
+Implement a learning mechanism that allows the option to reject images, and will train on accepted images.
 
 \section{Extras}
 
