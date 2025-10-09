@@ -12,34 +12,91 @@
 				\item Verify PoC deliverables
 				\item Discuss main branch protection
 				\item Talk about the previous years' attempt, what we can take from that
-				\item 
 			\end{itemize}
 
 		\subsubsection*{Minutes}
 			\begin{itemize}
-				\item minutes
+				\item Went over summary of the project with Dr. Wassyng and Dr. Rapoport, cave mapping goal
+				\item Got a hold of one of last years' group. On the topic of reuse, it's up to us how much to reuse. Build on other projects with most projects, just acknowledge.
+				\item Last year didnt finish algos, apparently had trouble with the helmet. It didn't see everything they wanted, was unnatural to use.
+				\item Talk with Giamou a lot to start- this will become difficult
+				\item Easier to write your own algorithms than trying to debug someone else's. Will be easier to start fresh
+				\item ToF sensor works with vendor software, in Thode
+				\item Proof of concept deliverables- not a prototype, just think about what is critical for success. Show some kind of proof that we can overcome the main hurdle
+				\item Quick and dirty, feasibility proof. Does not have to be used in final protoypes/iterations. 
+				\item Informal presentation, tell problem (1-2 of them) show why it works. Previous videos to base off off
+				\item Written contract: submitted Friday Oct 31. Things that we are guaranteeing that we will have done. High level goals, no nice-to-haves, underpromise, overdeliver.
+				\item \textit{Berk arrives}
+				\item Written contract is conditions for success; shouldnt be trivial.
+				\item Do a good job on version control. Try and get (code) architecture done early, set interfaces (internal sw, sw/hw).
+				\item Do sfwr early- some groups skimp on unit testing and just do integration. Having the lower level verification eases debugging
+				\item Backups are a good idea, disable force pushes (history rewriting).
+				\item Chat with Vasily, he's very good with software (and toasters). He is not usually at these meetings, more of an advisor. (they have other classes and commitments)
+				\item Have a reasonably regular meeting with him. He'll be vocal about changes we should make.
+				\item \textit{Reviewing} and reusing their electronics counts for the electrical requirement- "debugging is more difficult than writing"
+				\item Dont be as smart as possible when coding, because then you're not smart enough to debug it. Keep it simple. Optimize after it works.
 			\end{itemize}
 
 		\subsubsection*{Action Items}
 			\begin{itemize}
-				\item
+				\item Work on proof of concept over reading week break (due week of Oct 27)
+				\item Work on written demo contract (due Oct 31)
+				\item Talk with Dr. Giamou and our TA Vasily
 			\end{itemize}
 
-	\subsection*{Supervisor Meeting - 4:30pm - Dr. Giamou}
+	\subsection*{Supervisor Meeting - 4:10-5:00pm}
 		\subsubsection*{Agenda}
 			\begin{itemize}
 				\item Plan future meetings
 				\item Identify points of clarification
+				\item Talk with Dr. Giamou about what we should do for the PoC
 			\end{itemize}
 
 		\subsubsection*{Minutes}
 			\begin{itemize}
-				\item minute
+				\item Before meeting with Giamou, talking about reading week plans
+				\item Will meet online during the regular slot on reading week, to check in
+				\item Simple slideshow with some of last years' stuff, whatever work we have done for the proof of concept.
+				\item electrical distribution board appears to have been open sourced
+				\item PoC: show sensor working with a laptop or Pi, fusion?
+				\item Stick with MIT license
+				\item Review the CI/CD settings so that we don't get 3 emails every time documentation is changed
+				\item Should create a milestone for the PoC and start putting issues under that to distribute work
+				\item Try out decomposing issues, see how the hierarchy works in Github- start big, break into small
+				\item New/different sensors: keep current for PoC, change later if needed to achieve goals or requirements
+				\item Make issues as we think of them, assign them as needed
+				\item Can reconfigure sonarqube to ignore documents file, may disable actions for now
+				\item Tabish can also help with unit tests; more of a later problem. Will know more about what to test once we have more code completed.
+				\item \textit{Meeting with Dr Giamou}
+				\item Updating, telling him about deliverables. Need to figure out what the PoC pain points are.
+				\item Getting a couple of the sensors integrated, have 3 weeks to work on PoC
+				\item What went well last year and what didnt go well?
+				\item Werent able to do point cload alignment with ToF sensors. Try and get them up and running or decide on different sensor, or choose brighter env.
+				\item We found that ToF works, could work with the vendors software. Need to get it clean enough to do ICP, fuse with IMU.
+				\item IMU as complimentary filter, use only for orientation. Gyro/yaw
+				\item 2D lidar was working well indoor. ToF is supposed to help with low light
+				\item To make point cloud, imu gives orientation, accumulate points from one position. Need ToF to do full 6dof.
+				\item For us, lidar gets larger FoV point cloud that isnt ToF, which have narrower views.
+				\item Start with ToF, get them up and running, ICP with them. DOn't need to fuse IMU yet, use with 2d lidar to build point cloud.
+				\item Pose: orientation+position- 6 axes
+				\item Andrew has academic resources for this form last year, textbook on state estimation. Andrew's literature review on subterranean mapping.
+				\item *Andrew*- send us the resources
+				\item Open loop estimation, trusting odometry from ICP.
+				\item Did a demo with the ToF sensor, looks pretty good. Does well in middling lighting within Giamou's office.
+				\item Consider other battery chemistries- LiFePO4?
+				\item Decide on coverage of the two sensors, what fields of view are important. Side to side? Forward? experiment. No need for stereo, overlapping could interfere though
+				\item Consider button to control when imaging, no need for constant movement
+				\item Existing algos to fuse data, openCV, ICP
+				\item For combining IMU with point cloud, do extended filtering. No loop closures. 2d slice not for space, for mapping
+				\item Next meeting should be right after reading week or when PoC is mostly done, 2-3wks from now, would have to be online once his daughter is born. Meet online in November.
+				\item Giamou is in person M/T/Th
+				\item Mondays are a good day- 1:30-3:30, or 10:30-12:30. 20th or 27th depending on PoC, likely at 2:30pm.
 			\end{itemize}
 
 		\subsubsection*{Action Items}
 			\begin{itemize}
-				\item
+				\item PoC due Oct 30 - see above, mainly work on ToF. IMU later, then 2d lidar.
+				\item Add Dr. Giamou to the GitHub - username mattgiamou
 			\end{itemize}
 
 
