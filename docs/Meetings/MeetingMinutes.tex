@@ -4,17 +4,6 @@
 \usepackage{titlesec}
 \titleformat*{\section}{\LARGE\bfseries\titlerule}
 
-
-% TEMPLATE/FORMAT:
-%-------------------------------------------------
-% \section*{/*DATE*/}
-% \addcontentsline{toc}{section}{/*Meeting #*/}
-% 
-% \textbf{Attendees:} Abdul, Tabish, Berk, Andrew (online) \\
-% \textbf{Notetaker:} Nicholas
-%-------------------------------------------------
-
-% Title page
 \title{\bf{Meeting Minutes} \\ \large{Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
 \date{}
 \author{}
@@ -23,131 +12,8 @@
 	\maketitle
 	%\tableofcontents
 	\newpage
-	
-	% Meeting 1
-	\section*{Sept. 11, 2025}
-	\addcontentsline{toc}{section}{Meeting 1}
-
-	\textbf{Attendees:} Abdul, Tabish, Berk, Andrew (online) \\
-	\textbf{Notetaker:} Nicholas
-
-		\subsection*{Agenda:}
-			\subsubsection*{Team Technology}
-			\begin{itemize}
-				\item Messaging/Communication: Teams 
-				\item Files- onedrive/sharepoint, eventually all Github (especially source files)
-				\item CI/CD- optional since we’re tron, should do some CI as is convenient and helps us, should be fire and forget
-				\item Berk makes the repo
-				\item Refining scope given by Andrew into an email to Dr. Wassyng for approval for Berk’s entry into the group. Will then slightly rotate it into the group formation message required for the deliverable.
-				\item Regular meeting during tutorial time (first hour), in person
-				\item Andrew as Liasion, chair
-				\item Nicholas as scribe
-				\item Python for now, cython exists if speedup needed
-				\item Can split computation into recording data/hardware interface, processing is separate task on another computer. Want to start over on that code, could pick fresh start. Various C/C++ libraries for these tasks
-				\item Possible stretch goal to have a backend, database to back up info/sync btn pi and server
-				\item Probably have a linter, Berk will see to it. Can follow formal convention, put issue number in commit message: https://www.conventionalcommits.org/en/v1.0.0/
-			\end{itemize}
-		\subsection*{Future Work}
-			\begin{itemize}
-				\item Explore existing literature (aka the code from the last group, or Andrew's from last year)
-				\item Figure out how the power delivery board works, determine whether we can reuse 
-				\item Sent out GitHub IDs to Andrew to share the code with us
-			\end{itemize}
-		\subsection*{Deliverables}
-			\begin{itemize}
-				\item Next deliverable is September 21st, 10 days from now; form teams, project description. 
-				\item Berk has emailed the professors about his case, will move towards the team formation deliverable based on that. 
-			\end{itemize}
-	\pagebreak
-	\section*{Sept. 18, 2025}
-	\addcontentsline{toc}{section}{Meeting 2}
-	\textbf{Attendees:} Abdul, Tabish, Berk, Andrew (all online) \\
-	\textbf{Notetaker:} Nicholas	
-		\subsection*{Project Goals and Development Plan}
-			\subsubsection*{Plan:} 
-				\begin{itemize}
-					\item Work asynchronously throughout the week on goals, add requirements and constraints as they relate to goals.	 
-					\item Work on this whenever have time over the next week 
-					\item Set main goal small, add stretch goals for other feasible 
-					\item Dev Plan rough outline 
-					\item Review existing materials from research project and last year’s capstone, going over source code, power pcb, see what is useful for us 
-					\item Make contact with old capstone group to understand that power pcb ~end of Sept 
-					\item After, test sensors to see how well they work, and roll into proof of concept deliverable ~Oct 
-					\item For PoC itself, mainly need to demonstrate software can work with data from the sensors, fusing the two. Electrical and mechanical are minor considerations, test sensor→sfwr model 
-					\item critical point of POC is ensuring sensors work for our goal 
-					\item Mech, elec, sfwr designed/implemented in parallel, feedback between them, iterations 
-					\item Main shortcomings to improve this year for rev0: ToF camera/sensor was not really working last year 
-					\item Reusing Pi5, could improve electrical system for rev0. Could also want something more efficient for sensor collection, data processed elsewhere. Do PoC and then re-evaluate 
-				\end{itemize}
-			\subsubsection*{Development:}
-				\begin{itemize}
-					\item Andrew plugged in the TOF camera and Windows sees it as a serial device
-					\item Sensor documentation:\\
-				\url{https://wiki.sipeed.com/hardware/en/maixsense/maixsense-a011/maixsense-a010.html}	
-				\end{itemize}
-
-			\subsubsection*{Deliverables:}
-				Project Goals and Development Plan - Sept 28 (11 days)
-
-
-
-	% Meeting 3
-	\pagebreak
-	\section*{Sept. 25, 2025}
-	\addcontentsline{toc}{section}{Meeting 3}
-
-	\textbf{Attendees:} Abdul, Tabish, Berk, Andrew \\
-	\textbf{Notetaker:} Nicholas
-
-	\subsection*{Project Goals and Development meeting (\textit{deliverable on the 28th})}
-		\begin{itemize}
-			\item Break down document into chunks, one person is responsible for completing it, two more for reviewing it
-			\item Finish writing sections by Saturday, finish reviewing by Sunday
-			\item Add rough goals to doc together during meeting
-			\item Also hash out the steps involved in project development
-			\item Prioritize setting up Git repo, evaluate using Dr. Smith’s template
-			\item Split the work out, everyone has $\sim$2 writing items to complete by Saturday, 3-4 reviewing tasks
-		\end{itemize}
-
-
-	% Meeting 4
-	\pagebreak
-	\section*{Oct. 2, 2025}
-	\addcontentsline{toc}{section}{Meeting 4}
-
-	\textbf{Attendees:} Abdul, Tabish, Berk, \textit{Andrew (Away)} \\
-	\textbf{Notetaker:} Nicholas
-
-		\subsection*{Agenda:}
-			\subsubsection*{GitHub}
-				\begin{itemize}
-					\item Used Dr. Smith’s template, has a lot extras/fluff that we won’t probably use like in docs
-					\item Main thing to keep is the action compiling the latex files, will be useful for future documentation
-					\item All future docs in the Github as tex
-					\item Convert meetings notes and commit
-					\item Same for goals/development plan
-					\item Use issues to track who does what -link commits to issues, assign to people
-					\item CI/CD: some tools to autogenerate issues if there are problems with the code
-					\item Use issues for actual tasks to complete in repo, ie meeting minutes, code additions, documentation
-					\item Add issues for ci/cd, notes, etc.
-					\item May be an issue with permissions, no one can assign issues or create commits
-				\end{itemize}
-		\subsection*{Action Items}
-			\begin{itemize}
-				\item Github permissions from Andrew
-				\item Add sufficient issues to get us to the PoC (Oct 27)
-				\item Complete the setup tasks before the next TA meeting
-				\item Meet with Giamou before PoC, possibly during this meeting time
-			\end{itemize}
-
-	
-	% Meeting 5
-	\pagebreak
-	\section*{\textit{DATE}}
-	\addcontentsline{toc}{section}{Meeting 5}
-
-	\textbf{Attendees:} Abdul, Tabish, Berk, Andrew\\
-	\textbf{Notetaker:} Nicholas
-
-
+	\input{Notes/meeting_minutes_11_09_2025}	
+	\input{Notes/meeting_minutes_18_09_2025}
+	\input{Notes/meeting_minutes_25_09_2025}
+	\input{Notes/meeting_minutes_02_10_2025}
 \end{document}
