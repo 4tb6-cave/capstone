@@ -1,3 +1,6 @@
 [submodule "docs/SRS-Meyer"]
 	path = docs/SRS-Meyer
 	url = https://github.com/ace-lectures/cas-handbook-req-template.git
+[submodule "src/ydlidar_ros2_driver"]
+	path = src/ydlidar_ros2_driver
+	url = https://github.com/YDLIDAR/ydlidar_ros2_driver.git
