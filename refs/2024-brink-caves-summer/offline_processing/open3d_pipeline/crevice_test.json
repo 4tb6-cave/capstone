@@ -1,0 +1,18 @@
+{
+    "name": "crevice test",
+    "path_dataset": "/home/arco3/Desktop/crevice",
+    "path_intrinsic": "/home/arco3/summer2024/cave_slam_2024/offline_processing/oak_intrinsics.json",
+    "n_frames_per_fragment": 20,
+    "n_keyframes_per_n_frame": 5,
+    "depth_min": 0.1,
+    "depth_max": 20.0,
+    "voxel_size": 0.2,
+    "depth_diff_max": 0.4,
+    "depth_scale": 1000,
+    "preference_loop_closure_odometry": 0.1,
+    "preference_loop_closure_registration": 5.0,
+    "tsdf_cubic_size": 20.0,
+    "icp_method": "generalized",
+    "global_registration": "ransac",
+    "python_multi_threading": true
+}
