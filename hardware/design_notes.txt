@@ -1,0 +1,10 @@
+Notes and analysis of the three boards designed by last years' group:
+
+Board 1/Rpi Head
+
+
+Board 2/IMU Connector
+
+
+Board 3/Fake Wire
+
