@@ -23,4 +23,5 @@ Essentially a 180 degree USB Type-C adapter, to connect USB6/Pi Power from the H
   * Does this have something to do with the non-standard power running? RPi Head may reveal this
 * Same H5VL10B diodes on CC, VBUS
 * **Point of improvement: Respinning the board such that the SMD are on the inside (less likely to be knocked off)**
+![Fake Wire](PCB/fakewire.png)
 
