@@ -1,0 +1,16 @@
+<package format="3">
+	<name>pointCloud2</name>
+	<version>0.0.1</version>
+	<description>Exports PointCloud data from ROS message</description>
+	<maintainer email="ak@testing.com">Abdul</maintainer>
+	<license>MIT</license>
+	<buildtool_depend>ament_cmake</buildtool_depend>
+	<depend>rclcpp</depend>
+	<depend>sensor_msgs</depend>
+	<depend>rosbag2_cpp</depend>
+	<depend>pcl_conversions</depend>
+	<depend>PCL</depend>
+	<export>
+		<build_type>ament_cmake</build_type>
+	</export>
+</package>
