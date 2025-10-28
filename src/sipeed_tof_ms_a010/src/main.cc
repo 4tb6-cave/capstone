@@ -1,4 +1,4 @@
-#include <cv_bridge/cv_bridge.hpp>
+#include <cv_bridge/cv_bridge.h>
 
 #include <chrono>
 #include <iostream>
