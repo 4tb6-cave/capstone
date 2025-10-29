@@ -6,12 +6,23 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rosbag2_cpp REQUIRED)
-find_package(PCL 1.12 REQUIRED COMPONENTS io filters)
+find_package(PCL 1.12 REQUIRED COMPONENTS io filters registration)
 find_package(pcl_conversions REQUIRED)
 
-add_executable(pointCloud2 src/point_cloud2_extract.cpp)
-ament_target_dependencies(pointCloud2 rclcpp sensor_msgs rosbag2_cpp pcl_conversions)
-target_link_libraries(pointCloud2 ${PCL_LIBRARIES})
-install(TARGETS pointCloud2 DESTINATION lib/${PROJECT_NAME})
+add_executable(point_cloud_extract src/point_cloud2_extract.cpp)
+add_executable(icp_two_frames src/icp_point_cloud.cpp)
+
+ament_target_dependencies(point_cloud_extract rclcpp sensor_msgs rosbag2_cpp pcl_conversions)
+
+target_link_libraries(point_cloud_extract ${PCL_LIBRARIES})
+target_link_libraries(icp_two_frames ${PCL_LIBRARIES})
+
+install(TARGETS 
+            point_cloud_extract 
+            icp_two_frames
+
+        DESTINATION 
+            lib/${PROJECT_NAME}
+)
 
 ament_package()

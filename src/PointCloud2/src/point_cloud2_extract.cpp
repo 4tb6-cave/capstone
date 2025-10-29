@@ -40,15 +40,15 @@ typename pcl::PointCloud<Point>::Ptr z_crop(
 		typename pcl::PassThrough<Point> PT_filter;
 		PT_filter.setInputCloud(input);
 		PT_filter.setFilterFieldName("z");
-		PT_filter.setFilterLimits(0.0, 0.254);
+		PT_filter.setFilterLimits(0.0255, 0.254);
 		PT_filter.filter(*filter_PC);
 		return filter_PC;
 
 	}
 
 int main(int argc, char** argv){
-	if (argc < 2) {
-		std::cerr << "Missing Arguments!\n"; // Command line argument foramt: ./<executable> path/to/bag/folder
+	if (argc < 3) {
+		std::cerr << "Missing Arguments!\n"; // Command line argument foramt: ./<executable> path/to/bag/folder <int meanSOR = 200>
 			return 1;
 	}
 
