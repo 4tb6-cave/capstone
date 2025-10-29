@@ -39,7 +39,7 @@ class SipeedTOF_MSA010_Publisher : public rclcpp::Node {
     
     std::string output_pointcloud_topic = "cloud_" + output_topic_num_param.as_string();
     std::string output_depth_topic = "depth_" + output_topic_num_param.as_string();
-    std::string output_frame_id = "tof_" + output_topic_num_param.as_string();
+    output_frame_id = "tof_" + output_topic_num_param.as_string();
     s = device_param.as_string();
     std::cout << "use device: " << s << std::endl;
     pser = new Serial(s);

@@ -1,11 +1,14 @@
 #include <string.h>
 
 #include <algorithm>
-// #include <iostream>
+#include <iostream>
 #include <string>
 #include <vector>
 
 #include "frame_struct.h"
+
+#define DEBUG_FRAME(line)
+// #define DEBUG_FRAME(line) line
 
 frame_t *handle_process(std::string s) {
   static std::vector<uint8_t> vecChar;
@@ -20,7 +23,7 @@ frame_t *handle_process(std::string s) {
   vecChar.insert(vecChar.end(), s.cbegin(), s.cend());
 
   if (vecChar.size() < 2) {
-    // cerr << "data is not enough!" << endl;
+    DEBUG_FRAME(std::cerr << "data is not enough!" << std::endl);
     goto __finished;
   }
 
@@ -33,7 +36,7 @@ __find_header:
     if (it == vecChar.end()) {
       /* keep last element which may be sflag_l */
       std::vector<uint8_t>(vecChar.end() - 1, vecChar.end()).swap(vecChar);
-      // cerr << "frame head not found! wait more data." << endl;
+      DEBUG_FRAME(std::cerr << "frame head not found! wait more data." << std::endl);
       goto __finished;
     }
     /* sflag_h found, *(it-1) always valid */
@@ -42,11 +45,11 @@ __find_header:
 
   if (it - 1 != vecChar.begin()) {
     std::vector<uint8_t>(it - 1, vecChar.end()).swap(vecChar);
-    // cerr << "frame move to first!" << endl;
+    DEBUG_FRAME(std::cerr << "frame move to first!" << std::endl);
   }
 
   if (vecChar.size() < sizeof(frame_t)) {
-    // cerr << "frame head data is not enough now! wait more data." << endl;
+    DEBUG_FRAME(std::cerr << "frame head data is not enough now! wait more data." << std::endl);
     goto __finished;
   }
 
@@ -55,14 +58,16 @@ __find_header:
 
   /* max frame payload size */
   if (frame_payload_len > 100 * 100) {
+	DEBUG_FRAME(std::cerr << "frame payload length too large: " << frame_payload_len << std::endl);
+	vecChar.erase(vecChar.begin()); // drop first byte so we don't try to parse same bad data again
     goto __find_header;
   }
 
   if (vecChar.begin() + FRAME_HEAD_SIZE + frame_payload_len +
           FRAME_CHECKSUM_SIZE + FRAME_END_SIZE + 1 >
       vecChar.end()) {
-    // cerr << "expected frame payload length: " << frame_payload_len << endl;
-    // cerr << "frame payload data is not enough now! wait more data." << endl;
+    DEBUG_FRAME(std::cerr << "expected frame payload length: " << frame_payload_len << std::endl);
+    DEBUG_FRAME(std::cerr << "frame payload data is not enough now! wait more data." << std::endl);
     goto __finished;
   }
 
@@ -75,7 +80,7 @@ __find_header:
     if (check_sum != ((uint8_t *)pf)[FRAME_HEAD_SIZE + frame_payload_len] ||
         eflag != ((uint8_t *)pf)[FRAME_HEAD_SIZE + frame_payload_len +
                                  FRAME_CHECKSUM_SIZE]) {
-      // cerr << "frame checksum or tail invalid! one more time." << endl;
+      DEBUG_FRAME(std::cerr << "frame checksum or tail invalid! one more time." << std::endl);
       std::vector<uint8_t>(it, vecChar.end()).swap(vecChar);
       goto __find_header;
     }
