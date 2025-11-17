@@ -1,0 +1,127 @@
+flowchart TD
+    %% Top event
+    T["CAVE safety"]
+    G0{{"OR"}}
+    PF["Physical failure"]
+    SF["Software failure"]
+
+    T --> G0
+    G0 --> SF
+    G0 --> PF
+
+    %% Physical failure OR gate
+    G1{{"OR"}}
+    PF --> G1
+
+    G1 --> ELEC["Electrical Failure"]
+    G1 --> SEN["Sensor Failure"]
+    G1 --> POS["Error from Physical Position"]
+    G1 --> DISP["Display Error"]
+
+    %% Electrical Branch
+    ELECMAINOR{{"OR"}}
+    ELEC-->ELECMAINOR
+
+    ELECMAINOR-->POWISSUE["Power Issue"]
+    ELECMAINOR-->MOBOISS["Motherboard Issue"]
+    ELECMAINOR-->WIRESISS["Wire Issue"]
+
+    POWISSUE -->  POWISSUEOR{{"OR"}}
+    MOBOISS --> MOBOISSOR{{"OR"}}
+    WIRESISS --> WIREISSOR{{"OR"}}
+
+    POWISSUEOR --> BATTISSUE["Battery Issue"]
+    POWISSUEOR --> REGISSUE["Regulator Issues"]
+    POWISSUEOR --> WIRESISS
+    
+    MOBOISSOR --> WIRESISS
+    MOBOISSOR --> SLDRISS["Solder Issues"]
+    MOBOISSOR --> GENPRTBRK["Piece breaks"]
+    MOBOISSOR --> INCCOMM["Incorrect communication between parts"]
+
+    WIREISSOR --> WRBRK["Wire breaks"]
+    WIREISSOR --> WRDSLDG["Wire gets dislodged"]
+    WIREISSOR --> WRINCR["Wire incorectly connected"]
+
+    SLDRISS --> SLDRISSOR{{"OR"}}
+    SLDRISSOR --> INCSLDR["Parts incorrectly soldered"]
+    SLDRISSOR --> SLDRBRK["Solder breaks off"]
+
+
+
+    %% Sensor Branch
+    SENSORMAINOR{{"OR"}}
+    SEN --> SENSORMAINOR
+    SENSORMAINOR --> SENSMALFUNC["Sensor malfunctions"]
+    SENSORMAINOR --> SENSBRK["Sensor breaks"]
+
+    SENSMALFUNCOR{{"OR"}}
+    SENSBRKOR{{"OR"}}
+
+    SENSMALFUNC-->SENSMALFUNCOR
+    SENSBRK-->SENSBRKOR
+
+    SENSMALFUNCOR-->POWERR["Not enough power supplied"]
+    SENSMALFUNCOR-->REFLC["Reflection giving incorrect reading"]
+    SENSMALFUNCOR-->SENSWRBRK["Sensor wire dislodged"]
+    SENSBRKOR --> SENSBMP["Sensor bumps into wall"]
+    SENSBRKOR --> SENSDBRFLL["Debris falls on Sensor"]
+
+    POWERROR{{"OR"}}
+    POWERR-->POWERROR
+    POWERROR-->BATVLTGLOW["Supplied voltage not enough"]
+    POWERROR-->BATVLTGHIGH["Supplied voltage too high"]
+    POWERROR-->WIRERR["Wire issue"]
+
+    WIRERROR{{"OR"}}
+    WIRERR --> WIRERROR
+    WIRERROR --> WREBRK["Wire Broke"]
+    WIRERROR --> WREDSLG["Wire dislodged"]
+
+    %% Position branch
+    G4{{"OR"}}
+    MNTOR{{"OR"}}
+    INCPLOR{{"OR"}}
+    PRSONOR{{"OR"}}
+    POS --> G4
+
+    G4 --> INCPL["Incorrect final Display"]
+    G4 --> MNT["Poor mounting"]
+    G4 --> PRSON["Human Angle"]
+
+    INCPL --> INCPLOR
+    MNT --> MNTOR
+    PRSON --> PRSONOR
+
+    INCPLOR --> SENSOVER["Sensor overlap"]
+    INCPLOR --> SENSGAP["Sensor gap too wide"]
+    MNTOR --> DGFRD["Too much allowed movement"]
+    MNTOR --> SENSLOOSE["Sensors Loose"]
+    MNTOR --> WGHTIMB["Imbalanced Weight"]
+    WGHTIMBOR{{"OR"}}
+    WGHTIMB-->WGHTIMBOR
+    WGHTIMBOR --> MODLERR["Wearable device poorly constructed"]
+    WGHTIMBOR --> INCPOS["Sensors incorrectly positioned on wearable device"]
+    PRSONOR --> PRSONINCPOS["Person in incorrect position"]
+    PRSONOR --> PRSONDISLDGE["Person dislodges sensors"]
+
+    %% Display branch
+    DISP --> G2{{"OR"}}
+    G2 --> BRK["Broken Display"]
+    G2 --> INRES["Incorrect resolution"]
+    DISPOR{{"OR"}}
+    INRES --> DISPOR
+    DISPOR --> SMALL["Small screen"]
+    DISPOR --> WRNGSET["Wrong Setting"]
+
+    %% OR for Broken Display
+    BRK --> G3{{"OR"}}
+    G3 --> SHAT["Shattered Screen"]
+    G3 --> LOOSE["Loose wire"]
+    
+    %% Deeper Section for DISP/OR
+    SHATOR{{"OR"}}
+    SHAT --> SHATOR
+    SHATOR --> DEBR["Debris Falling"]
+    SHATOR --> BUMP["Bumping Into Wall"]
+    LOOSE --> BUMP
