@@ -23,7 +23,7 @@ flowchart TD
     ELEC --> ELECMAINOR
 
     ELECMAINOR --> BATT["Battery Issue"]
-    ELECMAINOR --> REG["Regulator Issues"]
+    ELECMAINOR --> REG[" Voltage Regulator Issues"]
     ELECMAINOR --> MOBO["Motherboard Issue"]
     ELECMAINOR --> WIRE["Wire Issue"]
 
@@ -40,16 +40,22 @@ flowchart TD
     BATTXPLODOR --> BATTOVRHT["Battery overheats"]
     BATTXPLODOR --> BATTPNCTRD["Battery punctured"]
 
+    BATTOVRHT --> RISKID1["H2R1"]
+    BATTPNCTRD --> RISKID2["H2R2"]
+
     %% Regulator sub-branch
     REGOR{{"OR"}}
     REG --> REGOR
     REGOR --> REGCNV["Can't convert voltage to desired needs"]
-    REGOR --> REGMLFN["Regulator malfunctions"]
-    REGOR --> REGDIES["Regulator dies"]
+    REGOR --> REGMLFN["Voltage Regulator malfunctions"]
+    REGOR --> REGDIES["Voltage Regulator dies"]
 
     REGDIES --> REGDIESOR{{"OR"}}
-    REGDIESOR --> REGFUSEBRK["Regulator/Regulator fuse Breaks"]
-    REGDIESOR --> REGXPCRNG["Regulator operating outside of expected range"]
+    REGDIESOR --> REGFUSEBRK["Voltage Regulator/Regulator fuse Breaks"]
+    REGDIESOR --> REGXPCRNG["Voltage Regulator operating outside of expected range"]
+
+    REGFUSEBRK --> RISKID3["H2R3"]
+    REGXPCRNG --> RISKID4["H2R4"]
 
     %% Motherboard sub-branch
     MOBOOR{{"OR"}}
@@ -59,6 +65,9 @@ flowchart TD
     MOBOOR --> COMMPRT["Incorrect communication between parts"]
     MOBOOR --> WIRE
 
+    PRTBRK --> RISKID10["H2R10"]
+    COMMPRT --> RISKID11["H2R11"]
+
     %% Wire sub-branch
     WIREOR{{"OR"}}
     WIRE --> WIREOR
@@ -66,11 +75,18 @@ flowchart TD
     WIREOR --> WRDSLDG["Wire gets dislodged"]
     WIREOR --> WRINCR["Wire incorrectly connected"]
 
+    WRBRK --> RISKID7["H2R7"]
+    WRDSLDG --> RISKID8["H2R8"]
+    WRINCR --> RISKID9["H2R9"]
+
     %% Solder sub-branch
     SLDOR{{"OR"}}
     SLDRISS --> SLDOR
     SLDOR --> INCSLDR["Parts incorrectly soldered"]
     SLDOR --> SLDRBRK["Solder breaks off"]
+
+    INCSLDR --> RISKID5["H2R5"]
+    SLDRBRK --> RISKID6["H2R6"]
 
     %% Sensor Branch
     SENOR{{"OR"}}
@@ -85,6 +101,9 @@ flowchart TD
     SENSMALFOR --> SENSREFL["Reflection giving incorrect reading"]
     SENSMALFOR --> SENSWIRE["Sensor wire dislodged"]
 
+    SENSREFL --> RISKID12["H2R12"]
+    SENSWIRE --> RISKID13["H2R13"]
+
     %% Sensor power sub-branch
     SENSPWROR{{"OR"}}
     SENSPWR --> SENSPWROR
@@ -92,11 +111,17 @@ flowchart TD
     SENSPWROR --> PWRHIGH["Supplied voltage too high"]
     SENSPWROR --> WIRE
 
+    PWRLOW --> RISKID29["H2R29"]
+    PWRHIGH --> RISKID30["H2R30"]
+
     %% Sensor break sub-branch
     SENSBRKOR{{"OR"}}
     SENSBRK --> SENSBRKOR
     SENSBRKOR --> SENSBMP["Sensor bumps into wall"]
     SENSBRKOR --> SENSDBRFLL["Debris falls on Sensor"]
+
+    SENSBMP --> RISKID14["H2R14"]
+    SENSDBRFLL --> RISKID15["H2R15"]
 
     %% Position branch
     POSOR{{"OR"}}
@@ -108,8 +133,11 @@ flowchart TD
     %% Incorrect display sub-branch
     INCPLOR{{"OR"}}
     INCPL --> INCPLOR
-    INCPLOR --> SENSOVR["Sensor overlap"]
+    INCPLOR --> SENSOVR["Sensor gap too narrow"]
     INCPLOR --> SENSGAP["Sensor gap too wide"]
+
+    SENSOVR --> RISKID16["H2R16"]
+    SENSGAP --> RISKID17["H2R17"]
 
     %% Mounting sub-branch
     MNTOR{{"OR"}}
@@ -118,17 +146,26 @@ flowchart TD
     MNTOR --> SENSLS["Sensors Loose"]
     MNTOR --> WGTIMB["Imbalanced Weight"]
 
+    MNTMOVE --> RISKID20["H2R20"]
+    SENSLS --> RISKID21["H2R21"]
+
     %% Weight imbalance sub-branch
     WGTIMBOR{{"OR"}}
     WGTIMB --> WGTIMBOR
     WGTIMBOR --> MODLERR["Wearable device poorly constructed"]
     WGTIMBOR --> INCPOS["Sensors incorrectly positioned on wearable device"]
 
+    MODLERR --> RISKID18["H2R18"]
+    INCPOS --> RISKID19["H2R19"]
+
     %% Human angle sub-branch
     PRSONOR{{"OR"}}
     PRSON --> PRSONOR
     PRSONOR --> PRSNINCPOS["Person in incorrect position"]
     PRSONOR --> PRSNDISLDG["Person dislodges sensors"]
+
+    PRSNINCPOS --> RISKID22["H2R22"]
+    PRSNDISLDG --> RISKID23["H2R23"]
 
     %% Display branch
     DISPOR{{"OR"}}
@@ -142,11 +179,16 @@ flowchart TD
     BRKOR --> SHAT["Shattered Screen"]
     BRKOR --> LOOSEWIRE["Loose wire"]
 
+    LOOSEWIRE --> RISKID26["H2R26"]
+
     %% Shattered screen sub-branch
     SHATOR{{"OR"}}
     SHAT --> SHATOR
     SHATOR --> DEBR["Debris Falling"]
     SHATOR --> BUMP["Bumping Into Wall"]
+
+    DEBR --> RISKID24["H2R24"]
+    BUMP --> RISKID25["H2R25"]
 
     %% Incorrect resolution sub-branch
     INRESOR{{"OR"}}
@@ -154,12 +196,16 @@ flowchart TD
     INRESOR --> SMALL["Small screen"]
     INRESOR --> WRNGSET["Wrong Setting"]
 
+    SMALL --> RISKID27["H2R27"]
+    WRNGSET --> RISKID28["H2R28"]
+
     %% Styling
     classDef orBlock fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
     classDef severe fill:#ffebee,stroke:#c62828,stroke-width:2px
     classDef high fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     classDef medium fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef low fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef labels fill:#f4e9c8,stroke:#efc750,stroke-width2px
 
     %% OR blocks styling
     class G0,G1,ELECMAINOR,BATTOR,BATTXPLODOR,REGOR,MOBOOR,WIREOR,SLDOR,SENOR,SENSMALFOR,SENSPWROR,SENSBRKOR,POSOR,INCPLOR,MNTOR,WGTIMBOR,PRSONOR,DISPOR,BRKOR,SHATOR,INRESOR orBlock
@@ -171,7 +217,10 @@ flowchart TD
     class BATT,REG,SENSMALF,SENSBRK,SHAT,BRK high
 
     %% Medium severity issues (purple)
-    class BATTCAP,BATTVOLT,REGMLFN,REGDIES,SLDRISS,SENSPWR,SENSWIRE,INCPL,PRSON,INRES medium
+    class BATTCAP,BATTVOLT,REGMLFN,REGDIES,SLDRISS,SENSPWR,SENSWIRE,INCPL,PRSON,INRES,SENSGAP,SENSOVR medium
 
     %% Low severity issues (green)
-    class MNT,PWRLOW,PWRHIGH,WIRE,LOOSEWIRE,SMALL,WRNGSET,PRSNINCPOS,PRSNDISLDG,SENLOOSE,SENSGAP,MNTMOVE,WGTIMB,MODLERR,INCPOS low
+    class MNT,PWRLOW,PWRHIGH,WIRE,LOOSEWIRE,SMALL,WRNGSET,PRSNINCPOS,PRSNDISLDG,SENLOOSE,MNTMOVE,WGTIMB,MODLERR,INCPOS low
+
+    %% Labels (yellow)
+    class RISKID1,RISKID2,RISKID3,RISKID4,RISKID5,RISKID6,RISKID7,RISKID8,RISKID9,RISKID10,RISKID11,RISKID12,RISKID13,RISKID14,RISKID15,RISKID16,RISKID17,RISKID18,RISKID19,RISKID20,RISKID21,RISKID22,RISKID23,RISKID24,RISKID25,RISKID26,RISKID27,RISKID28,RISKID29,RISKID30 labels
