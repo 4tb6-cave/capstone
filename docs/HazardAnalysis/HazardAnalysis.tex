@@ -159,39 +159,39 @@
 
 	\section{System Requirements}
 		%\subsection{System Requirements}
-		\begin{tabularx}{\textwidth}{X c}
+		\begin{tabularx}{\textwidth}{X p{0.3\textwidth}}
 			\toprule
 			\textbf{Requirement Type} & \textbf{Likelihood of Change}\\
 			\toprule
 			\multicolumn{2}{c}{\textbf{Behavioural}} \\
 			\toprule
-			\textbf{RB1:} The device will produce a point cloud C\_point\_cloud representing the physical surfaces mapped by the sensors (M\_tof\_data, M\_lidar\_data) while recording is enabled (M\_start\_stop == true).  & Low  \\
+			\textbf{RB1:} The device will produce a point cloud C\_point\_cloud representing the physical surfaces mapped by the sensors (M\_tof\_data, M\_lidar\_data) while recording is enabled (M\_start\_stop == true).  & Low - this is a core functionality of the device. \\
 			\midrule
-			\textbf{RB2:} The confidence in the accuracy of C\_point\_cloud shall be represented by C\_confidence  &  Possible\\
+			\textbf{RB2:} The confidence in the accuracy of C\_point\_cloud shall be represented by C\_confidence  &  Possible - It may be hard to produce a useful measure of C\_confidence. \\
 			\midrule
-			\textbf{RB3:} C\_record\_status toggles between indicating recording and standby when M\_start\_stop is toggled by the user. If the system encounters an error it cannot recover from, it must display an error status on C\_record\_status.  & Low  \\
+			\textbf{RB3:} C\_record\_status toggles between indicating recording and standby when M\_start\_stop is toggled by the user. If the system encounters an error it cannot recover from, it must display an error status on C\_record\_status.  & Low - this is a basic error communication. \\
 			\midrule
-			\textbf{RB4:} C\_record\_time will display remaining available recording time by taking the minimum of M\_SOC/const\_power\_rate and M\_storage\_left/const\_datarate.  &  Low \\
+			\textbf{RB4:} C\_record\_time will display remaining available recording time by taking the minimum of M\_SOC/const\_power\_rate and M\_storage\_left/const\_datarate.  &  Low - Important to achieve for ease of use by the operator. \\
 			\midrule
-			\textbf{RB5:} The system shall maintain a C\_confidence $>$ 50\% in little to no visible light conditions.  &  Low \\
+			\textbf{RB5:} The system shall maintain a C\_confidence $>$ 50\% in little to no visible light conditions.  &  Possible - This is a core function but the exact confidence measurement could change. \\
 			\toprule
 			\multicolumn{2}{c}{\textbf{Safety}} \\
 			\toprule
-			\textbf{RS1:} The battery shall be protected from punctures, overheating, or shorts.  & Low \\
+			\textbf{RS1:} The battery shall be protected from punctures, overheating, or shorts.  & Low - this is a basic safety measure. \\
 			\midrule
-			\textbf{RS2:} The device shall not expose any dangerous voltages to the user.  & Low \\
+			\textbf{RS2:} The device shall not expose any dangerous voltages to the user.  & Low - Also a basic safety measure. \\
 			\toprule
 			\multicolumn{2}{c}{\textbf{Timing}} \\
 			\toprule
-			\textbf{RT1:} Const\_capt\_rate shall be frequent enough to produce complete maps of an environment at a walking pace (3-5km/h)  & Low \\
+			\textbf{RT1:} Const\_capt\_rate shall be frequent enough to produce complete maps of an environment at a walking pace (3-5km/h)  & Low - Core function needed for ease of use. \\
 			\midrule
-			\textbf{RT2:} Const\_capt\_rate shall be low enough such that the system can complete a measurement of all sensor data before the next interval.  & Low \\
+			\textbf{RT2:} Const\_capt\_rate shall be low enough such that the system can complete a measurement of all sensor data before the next interval.  & Low - Need to ensure consistent data.\\
 			\toprule
 			\multicolumn{2}{c}{\textbf{Hardware/Software Environment}} \\
 			\toprule
-			\textbf{RE1:} The portable device shall not require an active internet connection to achieve the behavioural requirements RBX.  & Low \\
+			\textbf{RE1:} The portable device shall not require an active internet connection to achieve the behavioural requirements RBX.  & Low - Core function, must potentially operate underground. \\
 			\midrule
-			\textbf{RE2:} The hardware should minimize encumbrance of the user to ensure exploration is not inhibited.  & Low \\
+			\textbf{RE2:} The hardware should minimize encumbrance of the user to ensure exploration is not inhibited.  & Low - Important for ease of use. \\
 			\bottomrule
 			\caption{Requirement and likeliness to change}
 		\end{tabularx}
@@ -200,7 +200,7 @@
 		
 	\section{Hazard Analysis}
 		In this section, the safety requirements are determined by breakdown of the possible hazards that may occur in our system with respect to both software and hardware components. This is presented in an FTA in Figures \ref{fig:ftaS} and 
-		\ref{fig:ftaH}
+		\ref{fig:ftaH}.
 			\begin{center}
 				\begin{landscape}
 					\begin{figure}
