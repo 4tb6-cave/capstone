@@ -1,170 +1,297 @@
 \documentclass[11pt]{article}
 \usepackage[letterpaper, margin = 1 in]{geometry}
 \usepackage{tabularx}
-%\usepackage{ltablex}
-%\usepackage{tabularray}
+\usepackage{ltablex}
+\usepackage{tabularray}
 \usepackage{array}
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{caption}
 \usepackage{verbatim}
 \usepackage{graphicx}
-%\usepackage{tblr-extras}
-%\UseTblrLibrary{caption}
-%\usepackage[colorlinks=true, urlcolor=blue, linkcolor=black, citecolor=blue]{hyperref}
+\usepackage{float}
+\usepackage{pdflscape}
 
 
 \title{\textbf{Revision 0: \\Requirements and Hazard Analysis \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
 \author{Abdul Rahim Khan \\ Andrew Brink \\ Gokberk Yilmaz \\ Nicholas Trimble \\ Tabish Faisal}
 \date{November 16, 2025}
-%\input{../Comments}
-%\input{../Common}
 
 \begin{document}
 
 \maketitle
-%\thispagestyle{empty}
 
 ~\newpage
 
 \pagenumbering{roman}
+\setcounter{table}{-1}
+	\begin{table}[hp]
+		\caption{Revision History} \label{TblRevisionHistory}
+		\begin{tabularx}{\textwidth}{llX}
+			\toprule
+			\textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
+			\midrule
+			November 16, 2025 & All Members & Initial Draft\\
+			\bottomrule
+		\end{tabularx}
+	\end{table}
 
-%	\begin{table}[hp]
-%		\caption{Revision History} \label{TblRevisionHistory}
-%		\begin{tabularx}{\textwidth}{llX}
-%			\toprule
-%			\textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
-%			\midrule
-%			Date1 & Name(s) & Description of changes\\
-%			Date2 & Name(s) & Description of changes\\
-%			... & ... & ...\\
-%			\bottomrule
-%		\end{tabularx}
-%	\end{table}
+~\newpage
 
-%\tableofcontents
+\tableofcontents
 
+~\newpage
 
 \pagenumbering{arabic}
+\setcounter{table}{0}
 
 	\section{Introduction}
-		This document will define the scope of the C.A.V.E. system: what inputs it collects, what processing it does, and what outputs is creates. It will define all the variables and constants used to achieve this, as well as any notation or technical terms that are needed. There will also be a fault tree analysis (FTA) breakdown of the possible root causes of failure that will inform some of the safety requirements of the system. 
+		\subsection{Purpose}
 		
-	\section{Requirements}
-	
-	System Diagram 
-	
-	Definitions and Notation 
-	
-	Variables – monitored, controlled. Constants w/ nominal values. 
-	
-	Diagrams showing decomposition (?) 
-	
-	Safety/security requirements – reference hazard analysis in appendix 
-	
-	Requirements – required behaviour descripton, no design. Rationale, timing reqs, hardware, software, undesired event handling (safety), which are likely to change or aren’t 
-	
-	Very rough sketch of what is part of our system, what is not, and what the general structure of our design is (this is definitely not final, but I think it is a good start):
-	
-	%insert image
-	\begin{figure}[h]
-		\centering
-		\includegraphics[width=0.9\textwidth]{images/SystemDiagram}
-		\caption{General structure of the system}
-	\end{figure}
-	
-	\textbf{Monitored variables: }
-	\begin{itemize}
-		\item 	M\_tof\_data: matrices of distances to objects in environment 
-		\item 	M\_imu\_data: Orientation information from sensor (not sure if all the sensed values should be broken out here, if so that would be magnetometer, accelerometer, and gyroscope x, y, and z values) -going the split them to pad the report :) -Nicholas 
-		\item 	M\_lidar\_data: 2D Li-DAR scan 
-		\item 	M\_start\_stop: user interface button to start, stop scan  	
-		\item 	M\_battery\_level: no idea if we can monitor battery levels; even if so, should this be included here? 
-	\end{itemize}
+		The purpose of this document is to outline the system requirements of the C.A.V.E. system which will highlight expected behaviours like what inputs are collected, what type of processing is done on the data, and what output is being created. It will define all the necessary variables and constants used to achieve this, as well as any notation or technical terms that are needed. There will also be a fault tree analysis (FTA) breakdown of the possible root causes of failure that will inform the significant safety requirements of the system. 
 		
+		\subsection{Scope}
+		The scope of the system includes the development of a portable or wearable 3D data-acquisition device capable of reconstructing a scanned environment with integrated sensors and processing algorithms. The system records sequential point clouds from the Time-of-Flight sensors, fuses IMU orientation data and processes the collected data to generate an accurate and reliable 3D scan of the environment. This scope covers the areas of data capture, pre-processing, point cloud registration, as well hardware and software integration.
+		
+	\section{Project Definitions \& Variables}
+	
+	\subsection{Glossary}
+		The following table consists of definitions of certain terms and notations that are referenced in the project.
+		
+		\begin{tabularx}{\textwidth}{X p{0.7\textwidth}}
+			\toprule
+			\textbf{Term} & \textbf{Definition} \\
+			\midrule
+			IMU & Inertial Measurement Unit $\rightarrow$ Provides acceleration and rotational data\\
+			\midrule
+			LiDAR & Light Detection and Ranging $\rightarrow$ A sensor that uses a rotating laser to measure distances to objects\\
+			\midrule
+			Point Cloud & A collection of coordinate points in 3D space\\
+			\midrule
+			Portable Device & The portion of the design that is carried with the user/operator for mapping an enclosed space\\
+			\midrule
+			TOF & Time-of-Flight depth sensor $\rightarrow$ Uses pulses of infrared light and a sensor that measures the time at which the light is received back to create a point cloud \\
+			\bottomrule
+			\caption{Definitions}
+		\end{tabularx}
+
 	\subsection{Monitored and Controlled Variables}
 		Monitored variables are information from the environment being input to the system, and controlled variables are the output products of the system’s internal processes. The following tables list and describe these variables in the C.A.V.E. system. 
 	
-		\begin{tabularx}{\textwidth}{X X X X}
+		\begin{tabularx}{\textwidth}{p{0.17\textwidth}  X  X  X}
 			\toprule
 			\textbf{Variable} & \textbf{Description} & \textbf{Unit} & \textbf{Purpose} \\
 			\midrule
-			M\_tof\_data & A single dot matrix frame captured from the environment  & Array of depths and positions in metres  & Capturing the contours and shape of the environment \\
+			M\_tof\_data & A single depth image frame captured from the environment  & Array of depths and positions in metres  & Capturing the contours and shape of the environment \\
 			\midrule
-			M\_imu\_position & Device distance from C\_START\_POSN as measured by the IMU  & Metres in (x,y,z) 
-			
-			!!I’m assuming the IMU measures an offset from its power on location  & Provide reference for position change between M\_tof\_data captures  \\
+			M\_imu\_gyro & Device rotation rate about x,y,z axes, measured by IMU  & Degrees/second tuple $(\deg/s_{x},\deg/s_{y},\deg/s_{z})$ & Provide reference for position change between M\_tof\_data captures  \\
 			\midrule
-			M\_imu\_attitude & Device rotation about the x, y, z axes, measured by IMU  & Degrees: rotation from a reference frame & Provide reference for space frame rotation   \\
+			M\_imu\_accel & Device acceleration in x, y, z axes, measured by IMU & Metres/second\textsuperscript{2} tuple $(m/s^{2}_{x},m/s^{2}_{y},m/s^{2}_{z})$ & Additional frame translation reference  \\
 			\midrule
-			M\_imu\_accel & Device acceleration in x, y, z, directions, measured by IMU & Metres/second\textsuperscript{2} tuple (x,y,z) & Additional frame translation reference  \\
-			\midrule
-			M\_imu\_magnet & Change in magnetic field  & Check how its expressed- tesla/s?  & Additional frame rotation reference \\
+			M\_imu\_magnet & Change in magnetic field  & Tesla tuple $(T_{x},T_{y},T_{z})$  & Additional frame rotation reference \\
 			\midrule
 			M\_lidar & 2D Li-DAR scan of the environment & Tuple of distance in metres and angle in degrees & Long range slice of the environment to aid convergence \\
 			\midrule
 			M\_start\_stop & User toggle enabling or disabling the system & Boolean, true == on & Allow user control of starting and stopping a mapping session \\
 			\midrule
-			M\_SOC & Remaining battery percentage & \% of total charge & Estimate remaining time available for mapping \\
+			M\_SOC & Remaining battery percentage & Percentage of total charge (\%) & Estimate remaining time available for mapping \\
+			\midrule
+			M\_storage\_left & Remaining storage space available for data capture & Percentage of allocated storage (\%)& Estimate remaining storage available for mapping \\
 			\midrule
 			C\_record\_status & User facing indicator to show the status of M\_start\_stop & Boolean & Inform user of the status of M\_start\_stop \\
 			\midrule
-			C\_record\_remain & ... & ... & ... \\
+			C\_record\_remain & User facing indicator to show how long recording can continue for, given M\_SOC and M\_storage & Integer in the form MM:SS & Inform user how much longer they can record \\
+			\midrule
+			C\_point\_cloud & Final point cloud or 3D representation of the merging of all captured data & Point cloud; array of X,Y,Z tuples & Main product of the device, 3-dimensional representation of the mapped area (cave)\\
+			\midrule
+			C\_confidence & Indicator of the quality of the C\_point\_cloud representing the proportion of successfully merged capture instants &  Percentage (\%) & Show how well C\_point\_cloud represents the captured area \\
 			\bottomrule
+			\caption{Variables and its description}
 		\end{tabularx}
-	\\ \\
 
-		\textbf{Controlled variables: }
 		
-		\begin{itemize}
-			\item C\_record\_status: user interface light indicator (stopped, recording, error, etc) 
-			\item C\_record\_time: measurement (minutes?) of how long recording can continue (based on battery level and amount of storage) (I don’t know if this is something we can do with our hardware, it just seems like a good way to fluff up the controlled variables and the system requirements) 
-			\item C\_point\_cloud: point cloud created by merging all the data from the recording 
-			\item C\_confidence: This could be anything from a binary “success” or “failure” indicator to a more complex indicator of which parts of the map are accurate and which ones should be scanned again in more detail. We should probably specify which one it is. 
-		\end{itemize}	
-
-			\textbf{Constants:} 
+			\subsection{Constants} 
+			This section describes the values that will not change during the operation of the device and should be set to a specific value during design.
 			
-			\begin{itemize}
-				\item Transformation matrix from each sensor to the global coordinate system (based on mechanical design) 
-				\item Update rate for sensors (possibly different for each sensor) 
-				\item Storage capacity of recording computer 
-				\item Data rate for recording 
-			\end{itemize}
+			\begin{tabularx}{\textwidth}{X X X X}
+				\toprule
+				\textbf{Variable} & \textbf{Description} & \textbf{Unit} & \textbf{Purpose}\\
+				\midrule
+				Const\_transform\_i & Transformation matrix of sensor\textsubscript{i} from the reference frame (likely chosen as the IMU or centre of portable device) & 4x4 matrix representing translation and rotation in 3D & Define spatial relationship between different sensor's captures \\
+				\midrule
+				Const\_poll\_rate\_i & Rate at which sensor\textsubscript{i} makes information available to the system & Hertz & Inform rate of data ingest\\
+				\midrule
+				Const\_capt\_size\_i & Size of a single capture of information by sensor\textsubscript{i} & Gigabytes (GB) & Inform Const\_datarate \\
+				\midrule
+				Const\_capt\_rate & Reciprocal of the interval between a total system capture of all sensors & Hertz (s\textsuperscript{-1}) & Inform Const\_datarate \\
+				\midrule
+				Const\_storage & Storage capacity of the portable device & Gigabytes (GB) & Inform M\_storage\_left \\
+				\midrule
+				Cosnt\_datarate & Total ingested data from all sensors, the sum of Const\_capt\_rate * Const\_capt\_size\_i &Gigabytes/second (GB/s) & Inform C\_record\_remain \\
+				\midrule
+				Cosnt\_power\_rate & Average power consumption rate of the portable device & Watts (W) & Informs C\_record\_remain \\
+				\midrule
+				Cosnt\_power\_cap & Battery capacity of the portable device & Watt-hours (Wh) & Informs C\_record\_remain  \\
+				\bottomrule
+				\caption{Constants and its description}
+			\end{tabularx}
+
 		
-		\textbf{Requirements:}
+		\section{System Diagram}
+			In Figure \ref{fig:system}, the system is represented as a black-box, where the monitored variables serve as the inputs to the system and the controlled variables are the resulting outputs.
+			
+			\begin{figure}[H]
+				\centering
+				\includegraphics[width=0.9\textwidth]{images/SystemBoundaries.jpeg}
+				\caption{Representation of system boundaries}
+				\label{fig:system}
+			\end{figure}
 		
-		\begin{itemize}
-			\item C\_point\_cloud contains a sampling of points that represent the physical surface of the environment which has been seen by the sensors (M\_tof\_data, M\_lidar\_data) while the recording is active. 
-			\item The accuracy and reliability of the data contained in C\_point\_cloud must be reflected by the C\_confidence variable.
-			\item C\_record\_status toggles between recording and standby when M\_start\_stop button is pressed. If there is an error which the system cannot recover from on its own, C\_record\_status goes to error status. 
-			\item C\_record\_time counts down the amount of time remaining for recording, taking the minimum of the estimated battery life (inferred using M\_battery\_level) and the amount of recording time based on free device storage space and data rate of recording. 
-		\end{itemize}
+		\section{Functional Decomposition}
+			The folllowing figure shows the functional decomposition of the C.A.V.E. system.
+			
+			\begin{figure}[H]
+				\centering
+				\includegraphics[width=0.9\textwidth]{images/FunctionalDecomposition}
+				\caption{Functional decomposition of the system}
+				\label{fig:functional}
+			\end{figure}
+
+	\section{System Requirements}
+		%\subsection{System Requirements}
+		\begin{tabularx}{\textwidth}{X c}
+			\toprule
+			\textbf{Requirement Type} & \textbf{Likelihood of Change}\\
+			\toprule
+			\multicolumn{2}{c}{\textbf{Behavioural}} \\
+			\toprule
+			\textbf{RB1:} The device will produce a point cloud C\_point\_cloud representing the physical surfaces mapped by the sensors (M\_tof\_data, M\_lidar\_data) while recording is enabled (M\_start\_stop == true).  & Low  \\
+			\midrule
+			\textbf{RB2:} The confidence in the accuracy of C\_point\_cloud shall be represented by C\_confidence  &  Possible\\
+			\midrule
+			\textbf{RB3:} C\_record\_status toggles between indicating recording and standby when M\_start\_stop is toggled by the user. If the system encounters an error it cannot recover from, it must display an error status on C\_record\_status.  & Low  \\
+			\midrule
+			\textbf{RB4:} C\_record\_time will display remaining available recording time by taking the minimum of M\_SOC/const\_power\_rate and M\_storage\_left/const\_datarate.  &  Low \\
+			\midrule
+			\textbf{RB5:} The system shall maintain a C\_confidence $>$ 50\% in little to no visible light conditions.  &  Low \\
+			\toprule
+			\multicolumn{2}{c}{\textbf{Safety}} \\
+			\toprule
+			\textbf{RS1:} The battery shall be protected from punctures, overheating, or shorts.  & Low \\
+			\midrule
+			\textbf{RS2:} The device shall not expose any dangerous voltages to the user.  & Low \\
+			\toprule
+			\multicolumn{2}{c}{\textbf{Timing}} \\
+			\toprule
+			\textbf{RT1:} Const\_capt\_rate shall be frequent enough to produce complete maps of an environment at a walking pace (3-5km/h)  & Low \\
+			\midrule
+			\textbf{RT2:} Const\_capt\_rate shall be low enough such that the system can complete a measurement of all sensor data before the next interval.  & Low \\
+			\toprule
+			\multicolumn{2}{c}{\textbf{Hardware/Software Environment}} \\
+			\toprule
+			\textbf{RE1:} The portable device shall not require an active internet connection to achieve the behavioural requirements RBX.  & Low \\
+			\midrule
+			\textbf{RE2:} The hardware should minimize encumbrance of the user to ensure exploration is not inhibited.  & Low \\
+			\bottomrule
+			\caption{Requirement and likeliness to change}
+		\end{tabularx}
+		%\subsection{Performance Requirements}
+			
 		
-		
-		\textbf{Performance timing requirements: } \\	
-		Data sample rate from sensors is the only one I can think of \\
-		
-		\textbf{Requirements on hardware environment:} \\
-		Cave proof? \\
-		
-		\textbf{Requirements on software environment:} \\
-		...
 	\section{Hazard Analysis}
-		\begin{figure}[h]
-			\centering
-			\rotatebox{90}{
-			\includegraphics[width=1.35\textwidth]{images/FTA}
-			}
-			\caption{Fault tree analysis of the system}
-		\end{figure}
+		In this section, the safety requirements are determined by breakdown of the possible hazards that may occur in our system with respect to both software and hardware components. This is presented in an FTA in Figures \ref{fig:ftaS} and 
+		\ref{fig:ftaH}
+			\begin{center}
+				\begin{landscape}
+					\begin{figure}
+						\hspace{\fill}
+						\includegraphics[width=1.5\textwidth]{images/FTA}
+						\hspace{\fill}
+						\caption{FTA of the software components in the system}
+						\label{fig:ftaS}
+					\end{figure}
+				\end{landscape}
+			
+				\begin{landscape}
+					\begin{figure}
+						\hspace{\fill}
+						\includegraphics[width=1.4\textwidth]{images/FTAHardware}
+						\hspace{\fill}
+						\caption{FTA of the hardware components in the system}
+						\label{fig:ftaH}
+					\end{figure}
+				\end{landscape}
+			\end{center}
 		
-	\begin{comment}
-
-
-		
-	\end{comment}
-
+		\subsection{Error Handling/Mitigation}
+			The following table lists the error handling method or mitigation when any hazards occur in the system along with it respective severity.
+			
+			\begin{tabularx}{\textwidth}{ c  p{0.17\textwidth}  c  c  X }
+				\toprule
+				\textbf{Hazard ID} & \textbf{Description} & \textbf{Severity} & \textbf{Response Strategy} & \textbf {Mitigation Plan} \\ 
+				\hline 
+				\textbf{H2R1} & The battery overheats & High & Mitigate & Proper cooling, proper rated battery \\  
+				\hline
+				\textbf{H2R2} & Battery punctured & High  & Avoid  & Proper casing, kept in a place unlikely to get impacted \\
+				\hline
+				\textbf{H2R3} & Voltage regulator fuse breaks & Medium & Mitigate  & Proper rating of a regulator so it doesn't fall outside of expected range \\ 
+				\hline
+				\textbf{H2R4} & Voltage regulator operating outside of expected range & Medium  & Mitigate  & Make sure no sudden power draws occur \\ 
+				\hline
+				\textbf{H2R5} & Parts incorrectly soldered & Medium  & Avoid  & Double-check soldered equipment \\ 
+				\hline
+				\textbf{H2R6} & Solder breaks off & Medium & Avoid  & Use ample amount of solder \\ 
+				\hline
+				\textbf{H2R7} & Wire breaks & Medium  & Avoid  & Ensure wire is taut and flexible, double-check connections \\ 
+				\hline
+				\textbf{H2R8} & Wire gets dislodged & Medium & Avoid  & Double-check wire is securely connected to different pieces, stress-test connection \\ 
+				\hline
+				\textbf{H2R9} & Wire improperly connected & Medium & Avoid  & Double-check what the wires are connecting, make sure it follows a plan \\ 
+				\hline
+				\textbf{H2R10} & Motherboard component breaks & Medium & Avoid  & Keep motherboard secure and in a place less prone to bumps/potentially breaking \\ 
+				\hline
+				\textbf{H2R11} & Motherboard parts incorrectly communicate & Medium  & Avoid  & Double-check motherboard connections, ensure everything is wired as expected. \\ 
+				\hline
+				\textbf{H2R12} & TOF sensor providing point cloud of a reflection (e.g water)  & Medium  & Mitigate  & Ensure the other sensor can catch errors and correct them in post \\ 
+				\hline
+				\textbf{H2R13} & Sensor wire dislodged & Medium  & Avoid  & Provide the sensor enough support so the wire wouldn't accidentally break or get damaged \\ 
+				\hline
+				\textbf{H2R14} & Sensor bumps into wall & Medium  & Avoid  & Ensure sensor has proper protection so it's not directly in contact with cave walls \\ 
+				\hline
+				\textbf{H2R15} & Debris falls on sensor & Medium  & Avoid  & Ensure sensor is inset, or protected from potential vertical hazards \\ 
+				\hline
+				\textbf{H2R16} & Sensor gap too narrow & Medium  & Avoid & Correct planning to ensure optimal sensor placements such that there is minimal overlap to produce efficient imaging\\ 
+				\hline
+				\textbf{H2R17} & Sensor gap too wide & Medium  & Avoid  &  Correct planning to ensure optimal sensor placements such that there is minimal overlap to produce efficient imaging\\ 
+				\hline
+				\textbf{H2R18} & Wearable device poorly constructed & Low  & Avoid  & Proper simulation before printing, as well as rigorous testing to make sure it's constructed well \\ 
+				\hline
+				\textbf{H2R19} & Sensors incorrectly positioned & Low  & Avoid  &  Mirror sensor positions so that weight is balanced\\ 
+				\hline
+				\textbf{H2R20} & Too much allowed movement (for sensors) & Low & Avoid  & Limit degrees of freedom to 0 or 1 for each sensor \\ 
+				\hline
+				\textbf{H2R21} & Sensors Loose & Medium  & Avoid  & Proper machining such that the sensors fit snugly, without enough space to wiggle around. \\ 
+				\hline
+				\textbf{H2R22} & Person in incorrect position & Low  & Accept  & Explain to the user how to be properly angled, but accept there will be some human error in the beginning \\ 
+				\hline
+				\textbf{H2R23} & Person dislodges sensor & Low & Accept & Understand that there are human errors, and they may push some things incorrectly. Proper machining and construction will mitigate this as much as possible\\ 
+				\hline
+				\textbf{H2R24} & Debris Falling, shattering screen & Medium  & Mitigate & Give the screen a protector so that it wouldn't be harmed to a degree of breaking\\ 
+				\hline
+				\textbf{H2R25} & Bumping into a wall, shattering screen & Medium  & Mitigate & Give the screen proper protection so it wouldn't get damaged to such a degree  \\ 
+				\hline
+				\textbf{H2R26} & Loose wire for the display & Low  & Avoid  & Proper connection between the display and other hardware, make sure there is enough wire such that it doesn't snap or pull off \\ 
+				\hline
+				\textbf{H2R27} & Screen too small & Low  & Avoid & Research prior for assumed size of screen, such that everything would fit as expected\\ 
+				\hline
+				\textbf{H2R28} & Screen resolution incorrect & Low  & Avoid  & Make sure the screen used supports the resolution we have to display properly \\ 
+				\hline
+			 	\textbf{H2R29} & Under-supplied voltage & Low  & Avoid  & Shut down system if not enough power \\ 
+				\hline
+				\textbf{H2R30} & Over-supplied voltage & Low  & Avoid  & Shut down system if prolonged over-supplied voltage, to make sure parts don't break \\ 
+				\bottomrule
+				\caption{Hazards and its mitigation plan}
+			\end{tabularx}
 
 
 \end{document}
