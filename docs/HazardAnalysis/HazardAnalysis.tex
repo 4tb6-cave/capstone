@@ -13,7 +13,7 @@
 \usepackage{pdflscape}
 
 
-\title{\textbf{Revision 0: \\Requirements and Hazard Analysis \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
+\title{\textbf{Revision 0: \\System Requirements and Hazard Analysis \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
 \author{Abdul Rahim Khan \\ Andrew Brink \\ Gokberk Yilmaz \\ Nicholas Trimble \\ Tabish Faisal}
 \date{November 16, 2025}
 
@@ -48,10 +48,10 @@
 	\section{Introduction}
 		\subsection{Purpose}
 		
-		The purpose of this document is to outline the system requirements of the C.A.V.E. system which will highlight expected behaviours like what inputs are collected, what type of processing is done on the data, and what output is being created. It will define all the necessary variables and constants used to achieve this, as well as any notation or technical terms that are needed. There will also be a fault tree analysis (FTA) breakdown of the possible root causes of failure that will inform the significant safety requirements of the system. 
+		The purpose of this document is to outline the system requirements of the C.A.V.E. system, highlighting expected behaviours such as the inputs collected, what type of processing is performed on the data, and outputs generated. It will define all the necessary variables and constants used to achieve this, as well as any notation or technical terms that are needed. There will also be a fault tree analysis (FTA) breakdown of the possible root causes of failure that will inform the significant safety requirements of the system. 
 		
 		\subsection{Scope}
-		The scope of the system includes the development of a portable or wearable 3D data-acquisition device capable of reconstructing a scanned environment with integrated sensors and processing algorithms. The system records sequential point clouds from the Time-of-Flight sensors, fuses IMU orientation data and processes the collected data to generate an accurate and reliable 3D scan of the environment. This scope covers the areas of data capture, pre-processing, point cloud registration, as well hardware and software integration.
+		The scope of the system includes the development of a portable or wearable 3D data-acquisition device capable of reconstructing a scanned environment with integrated sensors and processing algorithms. The system records sequential point clouds from the Time-of-Flight sensors, fuses IMU orientation data and processes the collected data to generate an accurate and reliable 3D scan of the environment. This scope covers the areas of data capture, pre-processing, point cloud registration, as well as hardware and software integration.
 		
 	\section{Project Definitions \& Variables}
 	
@@ -70,9 +70,9 @@
 			\midrule
 			Portable Device & The portion of the design that is carried with the user/operator for mapping an enclosed space\\
 			\midrule
-			TOF & Time-of-Flight depth sensor $\rightarrow$ Uses pulses of infrared light and a sensor that measures the time at which the light is received back to create a point cloud \\
+			ToF & Time-of-Flight depth sensor $\rightarrow$ Uses pulses of infrared light and a sensor that measures the time at which the light is received back to create a point cloud \\
 			\bottomrule
-			\caption{Definitions}
+			\caption{Definition of Key Terms and Notation}
 		\end{tabularx}
 
 	\subsection{Monitored and Controlled Variables}
@@ -106,7 +106,7 @@
 			\midrule
 			C\_confidence & Indicator of the quality of the C\_point\_cloud representing the proportion of successfully merged capture instants &  Percentage (\%) & Show how well C\_point\_cloud represents the captured area \\
 			\bottomrule
-			\caption{Variables and its description}
+			\caption{Variables and its Description}
 		\end{tabularx}
 
 		
@@ -133,7 +133,7 @@
 				\midrule
 				Cosnt\_power\_cap & Battery capacity of the portable device & Watt-hours (Wh) & Informs C\_record\_remain  \\
 				\bottomrule
-				\caption{Constants and its description}
+				\caption{Constants and its Description}
 			\end{tabularx}
 
 		
@@ -143,7 +143,7 @@
 			\begin{figure}[H]
 				\centering
 				\includegraphics[width=0.9\textwidth]{images/SystemBoundaries.jpeg}
-				\caption{Representation of system boundaries}
+				\caption{Representation of System Boundaries}
 				\label{fig:system}
 			\end{figure}
 		
@@ -153,12 +153,11 @@
 			\begin{figure}[H]
 				\centering
 				\includegraphics[width=0.9\textwidth]{images/FunctionalDecomposition}
-				\caption{Functional decomposition of the system}
+				\caption{Functional Decomposition of the System}
 				\label{fig:functional}
 			\end{figure}
 
 	\section{System Requirements}
-		%\subsection{System Requirements}
 		\begin{tabularx}{\textwidth}{X p{0.3\textwidth}}
 			\toprule
 			\textbf{Requirement Type} & \textbf{Likelihood of Change}\\
@@ -187,13 +186,12 @@
 			\midrule
 			\textbf{RE2:} The hardware should minimize encumbrance of the user to ensure exploration is not inhibited.  & Low - Important for ease of use. \\
 			\bottomrule
-			\caption{Requirement and likeliness to change}
+			\caption{Requirement and its Likeliness to Change}
 		\end{tabularx}
-		%\subsection{Performance Requirements}
 			
 		
 	\section{Hazard Analysis}
-		In this section, the safety requirements are determined by breakdown of the possible hazards that may occur in our system with respect to both software and hardware components. This is presented in an FTA in Figures \ref{fig:ftaS} and 
+		In this section, the safety requirements are determined from a  breakdown of the possible hazards that may occur in the system with respect to both its software and hardware components. These hazards are analyzed through an FTA as shown in Figures \ref{fig:ftaS} and 
 		\ref{fig:ftaH}.
 			\begin{center}
 				\begin{landscape}
@@ -218,7 +216,7 @@
 			\end{center}
 		
 		\subsection{Error Handling/Mitigation}
-			The following table lists the error handling method or mitigation when any hazards occur in the system along with it respective severity.
+			The following table lists the error handling methods or mitigation when any hazards occur in the system along with its respective severity.
 			
 			\begin{tabularx}{\textwidth}{ c  p{0.17\textwidth}  c  c  X }
 				\toprule
@@ -268,7 +266,7 @@
 				\hline
 				\textbf{H2R22} & Person in incorrect position & Low  & Accept  & Explain to the user how to be properly angled, but accept there will be some human error in the beginning \\ 
 				\hline
-				\textbf{H2R23} & Person dislodges sensor & Low & Accept & Understand that there are human errors, and they may push some things incorrectly. Proper machining and construction will mitigate this as much as possible\\ 
+				\textbf{H2R23} & Person dislodges sensor & Low & Accept & Understand that there are human errors, and they may push some things incorrectly. Proper machining and fixtures will mitigate this as much as possible\\ 
 				\hline
 				\textbf{H2R24} & Debris Falling, shattering screen & Medium  & Mitigate & Give the screen a protector so that it wouldn't be harmed to a degree of breaking\\ 
 				\hline
@@ -280,11 +278,11 @@
 				\hline
 				\textbf{H2R28} & Screen resolution incorrect & Low  & Avoid  & Make sure the screen used supports the resolution we have to display properly \\ 
 				\hline
-			 	\textbf{H2R29} & Under-supplied voltage & Low  & Avoid  & Shut down system if not enough power \\ 
+			 	\textbf{H2R29} & Under-supplied voltage & Low  & Avoid  & Shut down the system if power is insufficient \\ 
 				\hline
-				\textbf{H2R30} & Over-supplied voltage & Low  & Avoid  & Shut down system if prolonged over-supplied voltage, to make sure parts don't break \\ 
+				\textbf{H2R30} & Over-supplied voltage & Low  & Avoid  & Shut down the system if prolonged over-supplied voltage, to make sure parts don't break \\ 
 				\bottomrule
-				\caption{Hazards and its mitigation plan}
+				\caption{Hazards and its Mitigation Plan}
 			\end{tabularx}
 
 
