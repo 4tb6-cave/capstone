@@ -1,0 +1,37 @@
+---
+config:
+  layout: dagre
+---
+flowchart LR
+ subgraph MONITORED["MONITORED VARIABLES"]
+        M_tof_data(["M_tof_data"])
+        M_imu_gyro(["M_imu_gyro"])
+        M_imu_accel(["M_imu_accel"])
+        M_imu_magnet(["M_imu_magnet"])
+        M_lidar(["M_lidar"])
+        M_start_stop(["M_start_stop"])
+        M_SOC(["M_SOC"])
+        M_storage_left(["M_storage_left"])
+  end
+ subgraph SYSTEM["SYSTEM"]
+        SENSORS(("Sensors"))
+        DEVICE(("Portable Device"))
+        OFFLINE(("Offline Processing"))
+  end
+ subgraph CONTROLLED["CONTROLLED VARIABLES"]
+        C_record_status(["C_record_status"])
+        C_record_remain(["C_record_remain"])
+        C_point_cloud(["C_point_cloud"])
+        C_confidence(["C_confidence"])
+  end
+    M_tof_data --> SENSORS
+    M_imu_gyro --> SENSORS
+    M_imu_accel --> SENSORS
+    M_imu_magnet --> SENSORS
+    M_lidar --> SENSORS
+    M_start_stop --> DEVICE
+    M_SOC --> DEVICE
+    M_storage_left --> DEVICE
+    DEVICE --> C_record_status & C_record_remain & OFFLINE
+    SENSORS --> DEVICE
+    OFFLINE --> C_point_cloud & C_confidence

@@ -1,0 +1,9 @@
+---
+config:
+  layout: dagre
+---
+flowchart TB
+    sys["Create point cloud"] --> A["Record Data"] & B["Process Data"]
+    A --> A1["User Interface"] & A2["Read sensor data"] & A3["Save Data"]
+    B --> B1["Filter outliers"] & B2["Fuse data"]
+    A2 --> A2a["IMU"] & A2b["TOF"] & A2c["LiDAR"]
