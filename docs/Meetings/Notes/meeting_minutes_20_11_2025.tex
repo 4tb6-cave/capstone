@@ -1,0 +1,78 @@
+% Meeting 5
+	\pagebreak
+	\section*{Nov. 20, 2025}
+	\addcontentsline{toc}{section}{Meeting 11}
+
+	\textbf{C.A.V.E Attendees:} Abdul, Tabish, Berk, Andrew, Nicholas\\
+	\textbf{Notetaker:} Nicholas
+
+	\subsection*{Team Meeting - 4:30pm}
+		\subsubsection*{Agenda}
+			\begin{itemize}
+				\item Talk about next deliverable, what we need to work on 
+				\item Future development work
+			\end{itemize}
+
+		\subsubsection*{Minutes}
+			\begin{itemize}
+				\item Abdul is working on ICP, made it point-plane
+				\item Need to focus on ICP 
+				\item Can add initial guesses to ICP from orientation data to help with this
+				\item Abdul to add documentation for his current ICP code for others to work on it
+				\item Use ROS packages for IMU, should automatically get values
+				\item ROS can poll them at the same time, relate IMU and TOF data temporally
+				\item Attempt to meet after exams online to line everything up for the design deliverable- timezones will be a consideration
+				\item Next deliverable is a large amount of work, huge amount of design, module interfaces and implementation
+				\item Software doesn't need to be completely formal, but whatever communicates the structures needed
+				\item Splitting up code- need to plan out who works on what. Can maybe save lidar for rev1
+				\item Transformation from IMU, TOF, lidar is there to add extra data points
+				\item Closed vs open loop scanning - closing is coming back to where you started, fixing previous scans backwards
+				\item Displaying remaining time could be annoying- 7 segment, or read out binary LEDs
+				\item we have money to spend if needed
+				\item Battery pack could be challenging to get the time remaining. 
+				\item Storage space is eaier to keep track of
+				\item Andrew has a programmable watch that could connect via bluetooth for control/info
+				\item Would be an easier controller than having someone else press buttons on the helmet
+				\item could design better UI on the helmet to make info easier to get
+			\end{itemize}
+
+		\subsubsection*{Action Items}
+			\begin{itemize}
+				\item Ask professor about when the last meeting is
+			\end{itemize}
+
+	\subsection*{Prof Meeting - 11:15am - Dr. Wassyng, Dr. Rapoport}
+		\subsubsection*{Agenda}
+			\begin{itemize}
+				\item Ask when last meeting
+				\item Any design document questions
+			\end{itemize}
+
+		\subsubsection*{Minutes}
+			\begin{itemize}
+				\item Last meeting will be thursday dec 4, so 2 more meetings
+				\item If we dont need to tlak to them, we don't have to, let them know in advance, dont do it all the time
+				\item Sfwreng has a bit more experience with how this documentation should go 
+				\item Variables and constants are similar aspects from requirements- difference is reqs are very high level, low detail
+				\item Taking variables into design, process them, answer the how of what happens
+				\item Note which part of the design implements what requirement, or part of a requirement
+				\item Helps keep everyone on same page with how the project should come together
+				\item Also helps with debugging, can identify which requirements are not being followed
+				\item Class will be responsible for some part of reqs, inside will have state variables- dataflow then looks much different from reqs 
+				\item MIS is most important, practically end sup as class interfaces. How they talk to each other, the crucial part of sfwr design
+				\item MID can be pseudocode, function tables, not all the way to language syntax to get behaviour
+				\item Something is going wrong if the coding isnt simple after the design
+				\item Reqs is what(and sometimes, hopefully, why), design is how
+				\item Design will look different from reqs as reality modifies the dataflow
+				\item Can bounce ideas off TAs, Dr Wassyng. Meet whenever needed if a problem is encountered
+				\item 
+			\end{itemize}
+
+		\subsubsection*{Action Items}
+			\begin{itemize}
+				\item Begin design documentation
+				\item Work one hardware platform, how to be put together
+			\end{itemize}
+
+
+
