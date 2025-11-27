@@ -6,7 +6,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rosbag2_cpp REQUIRED)
-find_package(PCL 1.12 REQUIRED COMPONENTS io filters registration)
+find_package(PCL 1.12 REQUIRED COMPONENTS io filters registration console)
 find_package(pcl_conversions REQUIRED)
 
 add_executable(point_cloud_extract src/point_cloud2_extract.cpp)
