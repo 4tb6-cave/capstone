@@ -21,7 +21,7 @@
 	\maketitle
 	~\newpage
 	\section{Introduction}
-		The goal of this project is to create a potable device that can reliably and accurately reconstruct 3-D mappings of low light environments, such as crevice caves in the Niagra Escarpment, while avoiding the use of expensive technologies and solutions such as a 3-D LiDAR.
+		The goal of this project is to create a portable device that can reliably and accurately reconstruct 3-D mappings of low light environments, such as crevice caves in the Niagra Escarpment, while avoiding the use of expensive technologies and solutions such as a 3-D LiDAR.
 		\subsection{Purpose}
 			This document will outline the specifications and design of the various modules within the device to achieve the requirements previously established. It will also partition these requirements into hardware and software sections and define the necessary interfaces and interactions between components. 
 		\subsection{Scope}
@@ -58,7 +58,7 @@
 			\end{tabularx}
 
 		\subsubsection{Behavior}
-			Takes in power and the various sensor signals and routes them to the software running on the Pi’s system-on-chip. The software will provide appropriate outputs to control the sensors and drive the various GPIO. 
+			Takes in power and the various sensor signals and routes them to the software running on the Pi’s system-on-chip. The software will provide appropriate outputs to control the sensors and drive the various GPIO. This component acheives requirement RE1. 
 		\subsubsection{Dimensions}
 \begin{figure}[H]
 				\centering
@@ -67,7 +67,7 @@
 				\label{fig:raspi5_D}
 			\end{figure}
 		\subsubsection{Electrical Interfaces}
-			Refer to Raspberry Pi RP1 Peripherals. 
+			Refer to Raspberry Pi RP1 Peripherals in section 8 (References). 
 
 	\subsection{ToF Sensor}
 			The time-of-flight sensors used are SIPEED MaixSense A010 3D ToF sensors.
@@ -82,7 +82,7 @@
 				\bottomrule
 			\end{tabularx}
 		\subsubsection{Behavior}
-			This sensor measures the distance between itself and the environment around it and produces a series of point clouds representing a capture at a certain time instant. The interval between these captures is to be controlled by the data collection software subsystem (S1-M1). 
+			This sensor measures the distance between itself and the environment around it and produces a series of point clouds representing a capture at a certain time instant. The interval between these captures is to be controlled by the data collection software subsystem (S1-M1) and will follow requirements RT1 and RT2.
 		\subsubsection{Dimensions}
 \begin{figure}[H]
 				\centering
@@ -110,7 +110,7 @@
 				\bottomrule
 			\end{tabularx}
 		\subsubsection{Behavior}
-			The IMU is a 9-axis sensor that will be used to determine displacement and rotation during scans. It produces fused data from a gyroscope, accelerometer, and geomagnetic sensor to produce matrices that represent displacements and rotations through the 3-D scanning area. 
+			The IMU is a 9-axis sensor that will be used to determine displacement and rotation during scans. It produces fused data from a gyroscope, accelerometer, and geomagnetic sensor to produce matrices that represent displacements and rotations through the 3-D scanning area. Captures from this sensor will also be on an interval conforming to RT1 and RT2. 
 		\subsubsection{Dimensions}
 			Measurements in this figure are in inches.
 \begin{figure}[H]
@@ -139,7 +139,7 @@
 				\bottomrule
 			\end{tabularx}
 		\subsubsection{Behavior}
-			Scans a 2-D slice by rotating 360 degrees with a range of 0.05-12m and 0.54deg resolution. Provides an additional point cloud that will be used to help merge the more detailed 3-D scans from the ToF sensors. 
+			Scans a 2-D slice by rotating 360 degrees with a range of 0.05-12m and 0.54deg resolution. Provides an additional point cloud that will be used to help merge the more detailed 3-D scans from the ToF sensors, improving c_confidence to conform to RB5. 
 		\subsubsection{Dimensions}
 			Measures 38.6mm wide and long, and 33.9mm tall, plus cable.
 \begin{figure}[H]
@@ -163,7 +163,7 @@
 				\bottomrule
 			\end{tabularx}
 		\subsubsection{Behavior}
-			This module is a standard USB-PD battery pack to provide safe, convenient, and portable power to the system. It will include a battery indicator to indicate to the user how much recording time is left and will be stored somewhere on the users’ person rather than on the helmet to lower to risk of it being damaged by low ceilings.  
+			This module is a standard USB-PD battery pack to provide safe, convenient, and portable power to the system. It will include a battery indicator to indicate to the user how much recording time is left and will be stored somewhere on the users’ person rather than on the helmet to lower to risk of it being damaged by low ceilings. Relevant requirements are RB4 and RE2.
 		\subsubsection{Dimensions}
 			It will fit in a pocket or small backpack, with this pack measuring 140mm high by 80mm wide by 30mm wide. 
 		\subsubsection{Electrical Interfaces}
@@ -173,7 +173,7 @@
 		\subsubsection{Inputs and Outputs}
 			This module has no electrical signals or information to process and so has no inputs or outputs. From a mechanical standpoint its inputs are the masses of the TOF sensors, LiDAR, IMU, and Raspberry Pi, and its output is their combined masses loaded on the helmet. 
 		\subsubsection{Behavior}
-			The purpose of this module is to provide a stable surface for the helmet mounted components to be secured to a caving helmet. Each module must be in a position where it can carry out uninterrupted scans (ie. TOF facing outward, LiDAR has full 360 line of sight). To enable the custom shapes needed to hold various sizes of sensors on a round platform the material will likely be 3-D printed PLA plastic. This material provides sufficient strength for the relatively small and light sensors and allows heat-set inserts to securely screw the each component to it. 
+			The purpose of this module is to provide a stable surface for the helmet mounted components to be secured to a caving helmet. Each module must be in a position where it can carry out uninterrupted scans (ie. TOF facing outward, LiDAR has full 360 line of sight). To enable the custom shapes needed to hold various sizes of sensors on a round platform the material will likely be 3-D printed PLA plastic. This material provides sufficient strength for the relatively small and light sensors and allows heat-set inserts to securely screw the each component to it. The primary requirement to conform to is RE2.
 		\subsubsection{Dimensions}
 			Final dimensions of the module are to be determined but they must keep the mounted modules as close to the helmet as reasonable, so they should not exceed the approximate 400x300x200mm cube around the user’s head. 
 
@@ -402,7 +402,7 @@ Methods
 \end{itemize}
 			\subsubsection{Scheduling}
 			There are no scheduling requirements, as this subsystem does not operate in real time. The functions may be called whenever the other modules are ready for the data. 
-			\subsubsection{Initialization}
+			%\subsubsection{Initialization}
 
 
 		\subsection{Module M6: Sensor Fusion}
@@ -473,11 +473,11 @@ Design of methods
 \item get\_point\_cloud $\rightarrow$ Returns copy of point\_cloud private data member 
 \end{itemize}
 
-Notes 
+\subsubsection{Notes} 
 
 \textit{The paper “Perception in the Dark” has been used as reference for how the Error State Kalman filter and ToF ICP can be implemented, and their open-source code will be used as a reference as well. This work is limited to one ToF sensor, however, and does not use 2D lidar.  (not sure how to cite this properly but here is a link: https://doi.org/10.3390/s20051263)}
-			\subsubsection{Scheduling}
-			\subsubsection{Initialization}
+			%\subsubsection{Scheduling}
+			%\subsubsection{Initialization}
 
 	\section{Normal Operation}
 		The normal operation would include the following steps: 
@@ -580,7 +580,7 @@ Notes
 					\end{itemize}
 			\end{itemize}
 		\end{itemize}
-	
+	\newpage
 	\section{Appendix A: Sandmaze PCBs}
 		Last years’ Sandmaze group created several PCBs which this group will build off to better integrate the data collection subsystem. 
 
@@ -732,11 +732,17 @@ This is a pure passthrough acting as a short cable between the RPi Head’s powe
 			\end{tabularx}
 \newpage
 			\section{References }
+			Raspberry Pi mechnical drawing: \\
 			\url{https://pip-assets.raspberrypi.com/categories/892-raspberry-pi-5/documents/RP-008347-DS-1-raspberry-pi-5-mechanical-drawing.pdf?disposition=inline} \\
+			Raspberry Pi RP1 Peripherals guide: \\
 			\url{https://pip-assets.raspberrypi.com/categories/892-raspberry-pi-5/documents/RP-008370-DS-1-rp1-peripherals.pdf?disposition=inline} \\
+			ToF sensors datasheet: \\
 			\url{https://dl.sipeed.com/shareURL/MaixSense/MaixSense\_A010} \\
+			IMU datasheet: \\
 			\url{https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/downloads} \\
+			LiDAR product page: \\
 			\url{https://www.ydlidar.com/product/ydlidar-t-mini-plus} \\
+			USB battery bank: \\
 			\url{https://www.staples.ca/products/3119320-en-ugreen-nexode-100w-3-port-20000-mah-power-bank-portable-charger-silver} \\
 
 \end{document}
