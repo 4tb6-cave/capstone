@@ -21,7 +21,7 @@
 	\maketitle
 	~\newpage
 	\section{Introduction}
-		The goal of this project is to create a portable device that can reliably and accurately reconstruct 3-D mappings of low light environments, such as crevice caves in the Niagra Escarpment, while avoiding the use of expensive technologies and solutions such as a 3-D LiDAR.
+		The goal of this project is to create a portable device that can reliably and accurately reconstruct 3-D mappings of low light environments, such as crevice caves in the Niagara Escarpment, while avoiding the use of expensive technologies and solutions such as a 3-D LiDAR.
 		\subsection{Purpose}
 			This document will outline the specifications and design of the various modules within the device to achieve the requirements previously established. It will also partition these requirements into hardware and software sections and define the necessary interfaces and interactions between components. 
 		\subsection{Scope}
@@ -51,7 +51,7 @@
 				Input & IMU & I2C & Various orientation data (M\_imu\_gyro, M\_imu\_accel, M\_imu\_magnet) \\
 				Input & 2D LiDAR & TBD  & Longer distance scans with a wider field-of-view (FOV) to aid in the point cloud merging (M\_lidar) \\
 				Input & Power & USB-PD & 5V, 5A via the RPi Head board - \textit{Refer to Appendix A}. *Note that this is not USB-PD compliant \\
-				Output & Capture Data & TBD & Database of captured information from a recording session \\
+				Output & Capture Data & rosbag & Database of captured information from a recording session \\
 				Output & Recording status & LED or button toggle & Indicates whether the a device is recording (C\_record\_status) \\
 				Output & Remaining time & LEDs or display & Communicates recording time available to user (C\_record\_remain) \\
 				\bottomrule
