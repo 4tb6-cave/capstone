@@ -495,12 +495,14 @@ Design of methods
 			\begin{itemize}
 				\item The system may not turn on 
 				\begin{itemize}
+					\item Related Hazards: “Battery capacity runs out”, H2R7, H2R8, H2R9
 					\item In this case, we’d check if we properly turned it on,  
 					\item If that does not work, we’d check if the battery is charged 
 					\item If it still does not work, then we’d check any wiring 
 				\end{itemize}
 				\item The system may turn on but then crash/turn off 
 					\begin{itemize}
+						\item Related Hazards: H2R13, H2R14, H2R15, H2R29, H2R30
 						\item In this case, this may be a software or sensor issue, in which case we’d have to determine the root cause. 
 					\end{itemize}
 			\end{itemize}
@@ -508,14 +510,17 @@ Design of methods
 			\begin{itemize}
 				\item Previous iterations may try to start up again 
 				\begin{itemize}
+					\item Related Hazards: H2R11 
 					\item Make sure all instances are closed during shut-down so that it wouldn’t restart 
 				\end{itemize}
 			\item Specific parts may fail or have an error 
 				\begin{itemize}
+					\item Related Hazards: All hazards can fall under this umbrella. 
 					\item Using well-defined error/loading messages to determine which part of the system particularly is giving issues, and work on countermeasures accordingly 
 				\end{itemize}
 			\item The battery may suddenly run out 
 				\begin{itemize}
+					\item Related Hazards: “Battery Issue” 
 					\item If this happens, ensure proper shutdown protocol so even if it suddenly loses power, it wouldn’t have devastating consequences 
 				\end{itemize}
 			\end{itemize}
@@ -523,15 +528,18 @@ Design of methods
 			\begin{itemize}
 				\item The battery may run out during scanning 
 				\begin{itemize}
+					\item Related Hazards: “Battery Issue” 
 					\item Since the scan is stored in RAM, the ongoing scan will be lost, however  
 				\end{itemize}
 				\item The indicator doesn’t indicate correctly 
 					\begin{itemize}
+						\item Related Hazards: H2R7 H2R8 H2R9 H2R11 
 						\item Have a second indicator just in case $\rightarrow$ if this fails, then have to check the entire system 
 						\item Ensure it isn't a human error, if not then have to check the system for the fault
 					\end{itemize}
 				\item Sudden/erratic movement for scanning 
 					\begin{itemize}
+						\item Related Hazards: H2R20, H2R22, H2R23 
 						\item Correct training on handling. 
 						\item Try and handle it by having “blank” space instead of warped space. 
 						\item Well timed snapshots to ensure minimal loss/warping.
@@ -542,21 +550,25 @@ Design of methods
 			\begin{itemize}
 				\item Manual stopping may not work
 					\begin{itemize}
+						\item Related Hazards: H2R7, H2R8, H2R9, H2R11 
 						\item Have a secondary method to manually stop the scan. 
 						\item Allow scans to save dynamically if there is a sudden shut-down, allowing us to in extreme cases disconnect whilst retaining information . 
 					\end{itemize}
 				\item Automatic stopping may not work 
 					\begin{itemize}
+						\item Related Hazards: H2R11 
 						\item Have a visual indicator for time left in the scanner, to ensure it was supposed to stop. 
 						\item Override automatic stopping with manual stopping.
 					\end{itemize}
 				\item Scan may be lost
 					\begin{itemize}
+						\item Related Hazards: H2R11 
 						\item Store the frames dynamically in such a way where when a sudden issue occurs, it will keep it safe. 
 						\item Have backup/concurrent instances saved in case one fails. 
 					\end{itemize}
 				\item Battery runs out 
 					\begin{itemize}
+						\item Related Hazards: “Battery Issue” 
 						\item Make sure most progress won’t be lost. It is okay if the algorithm breaks suddenly, but it shouldn’t affect the frames
 					\end{itemize}
 			\end{itemize}
@@ -564,6 +576,7 @@ Design of methods
 			\begin{itemize}
 				\item Battery runs out
 					\begin{itemize}
+						\item Related Hazards: “Battery Issue” 
 						\item Have a buffer of raw processed files so that it can reproduce the image if needed.  
 					\end{itemize}
 			\end{itemize}
@@ -571,10 +584,12 @@ Design of methods
 			\begin{itemize}
 				\item Doesn’t turn off
 					\begin{itemize}
+						\item Related Hazards: H2R11 
 						\item Allow a secondary override to forcefully shut down the system without catastrophic failure. 
 					\end{itemize}
 				\item The repeat uses the same data as before
 					\begin{itemize}
+						\item Related Hazards: H2R11 
 						\item Make sure shared variables are proper initialized and set to the default value before starting up. 
 						\item This can be done through double-checking via validation.  
 					\end{itemize}
