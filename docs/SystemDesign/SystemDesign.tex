@@ -11,6 +11,7 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
 
 
 \title{\textbf{Revision 0: \\ System Design \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
@@ -63,14 +64,14 @@
 \begin{figure}[H]
 				\centering
 				\includegraphics[width=0.9\textwidth]{images/RPi5.jpeg}
-				\caption{Dimensions of Raspberry Pi 5}
+				\caption{Dimensions of Raspberry Pi 5 \cite{rpi_mechanical}}
 				\label{fig:raspi5_D}
 			\end{figure}
 		\subsubsection{Electrical Interfaces}
-			Refer to Raspberry Pi RP1 Peripherals in section 8 (References). 
+			Refer to the Raspberry Pi RP1 Peripherals reference \cite{rpi_peripherals}. 
 
 	\subsection{ToF Sensor}
-			The time-of-flight sensors used are SIPEED MaixSense A010 3D ToF sensors.
+			The time-of-flight sensors used are SIPEED MaixSense A010 3D ToF sensors. Information is taken from \cite{tof}.
 		\subsubsection{Inputs and Outputs}
 			\begin{tabularx}{\textwidth}{X X X p{0.45\textwidth}}
 				\toprule
@@ -98,7 +99,7 @@
 				\label{fig:ToF_EI}
 			\end{figure}
 	\subsection{IMU}
-		This component is the Adafruit BNO055 Absolute Orientation Sensor. 
+		This component is the Adafruit BNO055 Absolute Orientation Sensor. Further information is found in \cite{imu}. 
 		\subsubsection{Inputs and Outputs}
 			\begin{tabularx}{\textwidth}{X X X p{0.45\textwidth}}
 				\toprule
@@ -152,7 +153,7 @@
 			Four pin JST-GH cable carrying 5V, UART Rx, UART Tx, and ground. 
 
 	\subsection{Battery Pack}
-		The exact pack used may change depending on price, availability, and depending on whether tests with lower input voltages (15V) prove feasible. Current designs are based on the UGREEN Nexode 100W 3-Port 20,000mAh power bank as it provides full 20V PD at a reasonable price and size. 
+		The exact pack used may change depending on price, availability, and depending on whether tests with lower input voltages (15V) prove feasible. Current designs are based on the UGREEN Nexode 100W 3-Port 20,000mAh power bank \cite{power_bank} as it provides full 20V PD at a reasonable price and size. 
 		\subsubsection{Inputs and Outputs}
 			\begin{tabularx}{\textwidth}{X X X p{0.45\textwidth}}
 				\toprule
@@ -475,9 +476,11 @@ Design of methods
 
 \subsubsection{Notes} 
 
-\textit{The paper “Perception in the Dark” has been used as reference for how the Error State Kalman filter and ToF ICP can be implemented, and their open-source code will be used as a reference as well. This work is limited to one ToF sensor, however, and does not use 2D lidar.  (not sure how to cite this properly but here is a link: https://doi.org/10.3390/s20051263)}
-			%\subsubsection{Scheduling}
-			%\subsubsection{Initialization}
+\textit{The work of Chen et al. \cite{chen} has been used as a reference for how the Error State Kalman filter and ToF ICP can be implemented, and their open-source code will be used as a reference as well. This work is limited to one ToF sensor, however, and does not use 2D lidar.}
+%\subsubsection{Initialization}
+
+\subsubsection{Scheduling}
+There are no scheduling requirements, as this subsystem does not operate in real time.  
 
 	\section{Normal Operation}
 		The normal operation would include the following steps: 
@@ -746,18 +749,14 @@ This is a pure passthrough acting as a short cable between the RPi Head’s powe
 				\bottomrule
 			\end{tabularx}
 \newpage
-			\section{References }
-			Raspberry Pi mechnical drawing: \\
-			\url{https://pip-assets.raspberrypi.com/categories/892-raspberry-pi-5/documents/RP-008347-DS-1-raspberry-pi-5-mechanical-drawing.pdf?disposition=inline} \\
-			Raspberry Pi RP1 Peripherals guide: \\
-			\url{https://pip-assets.raspberrypi.com/categories/892-raspberry-pi-5/documents/RP-008370-DS-1-rp1-peripherals.pdf?disposition=inline} \\
-			ToF sensors datasheet: \\
-			\url{https://dl.sipeed.com/shareURL/MaixSense/MaixSense\_A010} \\
-			IMU datasheet: \\
-			\url{https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/downloads} \\
-			LiDAR product page: \\
-			\url{https://www.ydlidar.com/product/ydlidar-t-mini-plus} \\
-			USB battery bank: \\
-			\url{https://www.staples.ca/products/3119320-en-ugreen-nexode-100w-3-port-20000-mah-power-bank-portable-charger-silver} \\
+		\begin{thebibliography}{7}
+			\bibitem{rpi_mechanical} Raspberry Pi 5 Mechanical Drawing, \url{https://datasheets.raspberrypi.com/rpi5/raspberry-pi-5-mechanical-drawing.pdf} (accessed Dec. 22, 2025).
+			\bibitem{rpi_peripherals} Raspberry Pi RP1 Peripherals, \url{https://datasheets.raspberrypi.com/rp1/rp1-peripherals.pdf} (accessed Dec. 22, 2025).
+			\bibitem{tof} Sipeed MaixSense A010 Documentation, \url{https://dl.sipeed.com/shareURL/MaixSense/MaixSense_A010} (accessed Dec. 22, 2025).
+			\bibitem{imu} BNO055 IMU Datasheet, \url{https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/downloads} (accessed Dec. 22, 2025).
+			\bibitem{lidar} YDLIDAR T-mini Plus product page, \url{https://www.ydlidar.com/product/ydlidar-t-mini-plus} (accessed Dec. 22, 2025).
+			\bibitem{power_bank} UGREEN Nexode 100W 3-Port 20,000 mAh Power Bank product page, \url{https://www.staples.ca/products/3119320-en-ugreen-nexode-100w-3-port-20000-mah-power-bank-portable-charger-silver} (accessed Dec. 22, 2025).
+			\bibitem{chen} S. Chen, C.-W. Chang, and C.-Y. Wen, “Perception in the dark; development of a TOF visual inertial odometry system,” Sensors, vol. 20, no. 5, p. 1263, Feb. 2020. doi:10.3390/s20051263 
+		\end{thebibliography}
 
 \end{document}
