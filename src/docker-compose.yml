@@ -1,0 +1,46 @@
+
+services:
+  base:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: base
+    # Interactive shell
+    stdin_open: true
+    tty: true
+    # Networking and IPC for ROS 2
+    network_mode: host
+    ipc: host
+    volumes:
+      # Allow usb
+      - /dev:/dev
+    device_cgroup_rules:
+      - 'c *:* rmw'
+
+  tof:
+    extends: base
+    command: 'ros2 run sipeed_tof_ms_a010 publisher --ros-args -p device:="/dev/ttyUSB0"'
+
+# The debug service has the full desktop ROS2 install (including programs like rviz2)
+  debug:
+    image: osrf/ros:humble-desktop
+    # Interactive shell
+    stdin_open: true
+    tty: true
+    # Networking and IPC for ROS 2
+    network_mode: host
+    ipc: host
+    # Needed to display graphical applications
+    privileged: true
+    environment:
+      # Allows graphical programs in the container.
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      # Allows graphical programs in the container.
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY:-$HOME/.Xauthority}:/root/.Xauthority
+    command: 'rviz2'
+
+# Todo: Add services for IMU and rosbag recording
