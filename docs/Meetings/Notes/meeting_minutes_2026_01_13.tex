@@ -1,0 +1,49 @@
+% Meeting 16
+	\pagebreak
+	\section*{Jan. 13, 2025}
+	\addcontentsline{toc}{section}{Meeting 16}
+
+	\textbf{C.A.V.E Attendees:} Abdul, Tabish, Berk, Andrew, Nicholas\\
+	\textbf{Notetaker:} Nicholas
+
+	\subsection*{Meeting with Dr. Giamou to plot Rev0}
+		\subsubsection*{Agenda}
+			\begin{itemize}
+				\item Rev0 deliverable
+			\end{itemize}
+
+		\subsubsection*{Minutes}
+			\begin{itemize}
+				\item Supports unicorn or front position of the lidar on the helmet
+				\item Need to avoid it sensing the helmet, unicorn avoids a lot of that
+				\item Has the stencils for the PCBs- I(Nicholas) can use that tomorrow
+				\item Mounting tabs- we can 3d print direct mount to the flatter pieces with tape
+				\item Have some docker fixes, should be able to do 1-2 commands to get image working with Ros2
+				\item Test ROS sync of both TOFs, can assume caver may not move between fast enough captures (25hz?)
+				\item Gaussian processes- geostatistical analysis thing- assume signal is gaussianly related through time? smoothes clock jitter
+				\item Have makerspace and solar car resources for space
+				\item If we need a new pi, can order on the capstone dime
+				\item ICP rundown- use both TOF, treat as single super sensor, run at 5hz, little overlap is fine, may be useful for calibration
+				\item Batch offline state estimation- run algo at home
+				\item IMU is ego motion frame, 'centre' gives accel and angular velocity
+				\item motion/odometry from IMU, TOF, use laser to map onto space
+				\item IMU as estimate for ICP, short time period integrated accel- open loop method
+				\item Or, use as complementary filter (double accel integration has high error) assume accel is dominated by gravity, use angular velocity for orientation, roll and pitch without yaw
+				\item May be existing ROS packages to do this, GTSAM is a python/cpp package for it 
+				\item Solves opt problem of going between time steps from ICP Ti frames and complementary filters from IMU
+				\item Perception in the Dark paper from 2020 uses the first method we considered
+				\item Use up our budget first, and then Giamou can spot us for mmore if needed
+				\item May meet on next Tuesday, depends where our work is, can meet at the same time every Tuesday if needed 
+				\item 
+			\end{itemize}
+
+		\subsubsection*{Action Items}
+			\begin{itemize}
+				\item Use stencils to create some more boards
+				\item Fix names of meeting minutes to make my life easier
+				\item Read over paper 
+				\item Test out mounting and capture
+				\item 
+			\end{itemize}
+
+
