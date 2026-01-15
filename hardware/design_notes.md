@@ -1,7 +1,9 @@
 # Notes and analysis of the three boards designed by last years' group:
 
 ## Board 1/Rpi Head
+This board does the power conversion from standard PD 20V/3A to the Pi5's nonstandard 5V/5A. 
 
+![Rpi Head](PCB/rpihead.png)
 
 ## Board 2/IMU Connector
 This is repinning the I2C interface of the IMU to run over a USB Type-C connector.
