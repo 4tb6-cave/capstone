@@ -19,18 +19,28 @@ services:
 
   tof:
     extends: base
-    command: 'ros2 run sipeed_tof_ms_a010 publisher --ros-args -p device:="/dev/ttyUSB0"'
-
-  imu_bno085:
-    extends: base
-    command: 'ros2 launch bno08x_driver bno085_i2c.launch.py'
-
-  record:
-    extends: base
     volumes:
       - ./record:/record
-    working_dir: /record
-    command: 'ros2 bag record cloud_one depth_one imu magnetic_field'
+    command: 'ros2 run sipeed_tof_ms_a010 publisher --ros-args -p device:="/dev/ttyUSB0"'
+
+#  imu_bno085:
+#    extends: base
+#    command: 'ros2 launch bno08x_driver bno085_i2c.launch.py'
+
+#  record:
+#    extends: base
+#    volumes:
+#      - ./record:/record
+#    working_dir: /record
+#    command: 'ros2 bag record cloud_one depth_one imu magnetic_field'
+
+#  berk:
+#    extends: base
+#    volumes:
+#      - ./record:/record
+#    working_dir: /record
+#    command: 'ros2 run berk pointcloud_saver'
+
 
 # The debug service has the full desktop ROS2 install (including programs like rviz2)
   debug:

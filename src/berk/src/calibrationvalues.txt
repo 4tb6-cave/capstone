@@ -1,0 +1,3 @@
+  Offsets_Magnetometer:  (-22, -258, -120)
+  Offsets_Gyroscope:     (-2, -3, 5)
+  Offsets_Accelerometer: (3, -10, -48)

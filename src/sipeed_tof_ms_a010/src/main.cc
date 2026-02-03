@@ -1,5 +1,9 @@
 #include <cv_bridge/cv_bridge.h>
 
+#include <sys/socket.h>   // socket(), connect()
+#include <sys/un.h>      // struct sockaddr_un
+#include <unistd.h>      // close()
+
 #include <chrono>
 #include <iostream>
 #include <opencv2/opencv.hpp>
@@ -10,6 +14,9 @@
 #include <std_msgs/msg/header.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <string>
+
+// Add this include for file stream operations
+#include <fstream>
 
 #include "cJSON.h"
 #include "frame_struct.h"
@@ -25,7 +32,7 @@ class SipeedTOF_MSA010_Publisher : public rclcpp::Node {
   Serial *pser;
   float uvf_parms[4];
 
- public:
+public:
   SipeedTOF_MSA010_Publisher() : Node("sipeed_tof_ms_a010") {
     std::string s;
     this->declare_parameter("device", "/dev/ttyUSB0");
@@ -33,19 +40,19 @@ class SipeedTOF_MSA010_Publisher : public rclcpp::Node {
     rclcpp::Parameter device_param = this->get_parameter("device");
     rclcpp::Parameter output_topic_num_param =
         this->get_parameter("output_topic_num");
-        
+
     std::cout << "Device Param: " << device_param.as_string() << std::endl;
     std::cout << "Output Topic Param: " << output_topic_num_param.as_string() << std::endl;
-    
+
     std::string output_pointcloud_topic = "cloud_" + output_topic_num_param.as_string();
     std::string output_depth_topic = "depth_" + output_topic_num_param.as_string();
     output_frame_id = "tof_" + output_topic_num_param.as_string();
     s = device_param.as_string();
     std::cout << "use device: " << s << std::endl;
     pser = new Serial(s);
-    
+
     int attempts_counter = 0;
-    
+
     // reboot the device's serial port
     ser  << "AT+DISP=1\r";
     while (s.compare("OK\r\n")) {
@@ -73,7 +80,7 @@ class SipeedTOF_MSA010_Publisher : public rclcpp::Node {
         return;
       }
     }
-    
+
     ser << "AT+COEFF?\r";
     ser >> s;
     while (s.find("+COEFF=1\r\nOK\r\n") == std::string::npos) {
@@ -88,7 +95,7 @@ class SipeedTOF_MSA010_Publisher : public rclcpp::Node {
         return;
       }
     }
-    
+
     s = s.substr(14, s.length() - 14);
     if (s.length() == 0) {
       ser >> s;
@@ -130,14 +137,42 @@ class SipeedTOF_MSA010_Publisher : public rclcpp::Node {
 
   ~SipeedTOF_MSA010_Publisher() {}
 
- private:
+private:
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_depth;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
       publisher_pointcloud;
   std::string output_frame_id;
 
+  static void send_imu_trigger()
+  {
+      const char *socket_path = "/record/imu_trigger";
+      int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+      if (sockfd == -1) {
+          // In a real system you might log this, but for brevity we ignore errors.
+          return;
+      }
+
+      struct sockaddr_un addr{};
+      addr.sun_family = AF_UNIX;
+      strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path)-1);
+
+      if (connect(sockfd, reinterpret_cast<struct sockaddr *>(&addr),
+                  sizeof(addr)) == -1) {
+          close(sockfd);
+          return;
+      }
+
+      // Send any non‑empty message – the IMU daemon just cares that
+      // something arrives.  A newline makes it easier to read with netcat.
+      const char *msg = "trigger\n";
+      write(sockfd, msg, strlen(msg));
+
+      close(sockfd);
+  }
+
   void timer_callback() {
+    send_imu_trigger();
     std::string s;
     std::stringstream sstream;
     frame_t *f;
@@ -226,7 +261,75 @@ class SipeedTOF_MSA010_Publisher : public rclcpp::Node {
       }
     publisher_pointcloud->publish(pcmsg);
 
+    std::string record_dir = "/record/";
+
+    // Timestamp in milliseconds
+    auto now          = std::chrono::system_clock::now();
+    auto ms_since_epoch =
+        std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+
+    // Filename with timestamp
+    std::stringstream filename;
+    filename << record_dir
+             << "pointcloud_"            // prefix
+             << ms_since_epoch           // timestamp (ms)
+             << ".ply";
+
+    savePointCloudAsPLY(pcmsg, filename.str());
+
+    RCLCPP_INFO(this->get_logger(),
+                "Saved pointcloud to %s", filename.str().c_str());
+
     free(f);
+  }
+
+  // Add this function to handle PLY file saving
+  void savePointCloudAsPLY(const sensor_msgs::msg::PointCloud2& pcmsg, const std::string& filename) {
+      // Open file for writing (binary)
+      std::ofstream out(filename, std::ios::out | std::ios::binary);
+
+      if (!out.is_open()) {
+          RCLCPP_ERROR(this->get_logger(), "Failed to open %s", filename.c_str());
+          return;
+      }
+
+      // Write PLY header
+      out << "ply\n";
+      out << "format binary_little_endian 1.0\n";
+      out << "element vertex " << pcmsg.width * pcmsg.height << "\n";
+      out << "property float x\n";
+      out << "property float y\n";
+      out << "property float z\n";
+      out << "property uchar red\n";
+      out << "property uchar green\n";
+      out << "property uchar blue\n";
+      out << "end_header\n";
+
+      // Write point cloud data
+      const uint8_t* ptr = pcmsg.data.data();
+      for (size_t j = 0; j < pcmsg.height; j++) {
+          for (size_t i = 0; i < pcmsg.width; i++) {
+              float x = *((float*)(ptr + 0));
+              float y = *((float*)(ptr + 4));
+              float z = *((float*)(ptr + 8));
+
+              uint32_t rgb = *((uint32_t*)(ptr + 12));
+              uint8_t r = (rgb >> 16) & 0xFF;
+              uint8_t g = (rgb >> 8) & 0xFF;
+              uint8_t b = rgb & 0xFF;
+
+              out.write(reinterpret_cast<const char*>(&x), sizeof(float));
+              out.write(reinterpret_cast<const char*>(&y), sizeof(float));
+              out.write(reinterpret_cast<const char*>(&z), sizeof(float));
+              out.write(reinterpret_cast<const char*>(&r), sizeof(uint8_t));
+              out.write(reinterpret_cast<const char*>(&g), sizeof(uint8_t));
+              out.write(reinterpret_cast<const char*>(&b), sizeof(uint8_t));
+
+              ptr += pcmsg.point_step;
+          }
+      }
+
+      out.close();
   }
 
   const uint8_t color_lut_jet[256][3] = {
@@ -303,3 +406,5 @@ int main(int argc, char const *argv[]) {
 
   return 0;
 }
+
+
