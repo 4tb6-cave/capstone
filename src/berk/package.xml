@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>berk</name>
+  <version>0.0.0</version>
+  <description>Berkeley point cloud saver node</description>
+  <maintainer email="your@email.com">Your Name</maintainer>
+  <license>Apache-2.0</license>
+
+  <build_type>ament_python</build_type>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+</package>
