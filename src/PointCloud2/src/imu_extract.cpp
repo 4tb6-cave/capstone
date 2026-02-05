@@ -1,0 +1,68 @@
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <iomanip>
+#include <filesystem>
+
+#include <rclcpp/serialization.hpp>
+#include <rclcpp/serialized_message.hpp>
+
+#include <sensor_msgs/msg/imu.hpp>
+
+#include <rosbag2_cpp/reader.hpp>
+#include <rosbag2_cpp/readers/sequential_reader.hpp>
+
+double timeStampToSec(const builtin_interfaces::msg::Time& t) {
+  return double(t.sec) + 1e-9 * double(t.nanosec);
+}
+int main (int argc, char** argv) {
+
+  if (argc < 2) { // How to run: ./executable <path/to/bag/folder> [imu_topic]
+    std::cerr << "Missing Arguments! | <required> ; [optional] --> ./executable <path/to/bag/folder> [imu_topic]\n";
+    return 1;
+  }
+  
+  std::string bag_path = argv[1];
+  std::string output_path = "Extracted_IMU_data_(" + bag_path + ")";
+  std::string imu_topic = (argc >= 3) ? std::string(argv[2]) : "/imu";
+ 
+  std::filesystem::create_directory(output_path);
+  std::ofstream imu_file(output_path + "/imu_(" + bag_path + ").csv");
+  if (!imu_file.is_open()) {
+    std::cerr << "Failed to open output file: " << output_path << "/imu.csv\n";
+    return 1;
+  }
+  imu_file << "time,o_x,o_y,o_z,o_w,av_x,av_y,av_z,la_x,la_y,la_z\n";
+  imu_file << std::fixed << std::setprecision(9);
+
+    std::cout << "Reading bag: " << bag_path << std::endl;
+
+    rosbag2_cpp::Reader reader;
+    reader.open(bag_path);
+
+    std::size_t imu_id = 0;
+
+    rclcpp::Serialization<sensor_msgs::msg::Imu> imu_ser;
+
+    while(reader.has_next()){
+        auto bag_msg = reader.read_next();
+
+        if(bag_msg->topic_name == imu_topic) {
+            sensor_msgs::msg::Imu imu_msg;
+            rclcpp::SerializedMessage ser_msg(*bag_msg->serialized_data);
+            imu_ser.deserialize_message(&ser_msg, &imu_msg);
+
+            double t = timeStampToSec(imu_msg.header.stamp);
+
+
+            imu_file << t << "," << imu_msg.orientation.x << "," << imu_msg.orientation.y << "," << imu_msg.orientation.z << "," << imu_msg.orientation.w << ","
+                << imu_msg.angular_velocity.x << "," << imu_msg.angular_velocity.y << "," << imu_msg.angular_velocity.z << ","
+                << imu_msg.linear_acceleration.x << "," << imu_msg.linear_acceleration.y << "," << imu_msg.linear_acceleration.z << "\n";
+
+            imu_id++;
+        }
+    }
+    std::cout << "IMU file created: " << output_path << "/imu(" << imu_id << ").csv";
+    return 0;
+
+}
