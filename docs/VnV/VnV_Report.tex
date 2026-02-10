@@ -85,10 +85,10 @@
 	\pagenumbering{arabic}
 	\subsection{Purpose}
 	
-	The purpose of this document is to validate and verify that the project requirements are feasible and achieve the objectives laid out in the contract. This serves as a checkpoint in the development process where we assess whether our software and hardware are capable of fulfilling the project requirements. The verificiation process provides a set pass/fail tests in which the status of the current revision is tested against ensuring requirement completion.
+	The purpose of this document is to validate and verify that the project requirements are feasible and achieve the objectives laid out in the contract. This serves as a checkpoint in the development process where we assess whether our software and hardware are capable of fulfilling the project requirements. The verification process provides a set of pass/fail tests which the current revision is tested against to determine requirement completion.
 	
 	\subsection{Scope}
-	This validation and verification encompass the entire C.A.V.E. design, including software, electrical, and mechanical components. Requirements are defined in \href{https://github.com/4tb6-cave/capstone/blob/main/docs/HazardAnalysis/HazardAnalysis.pdf}{Revision 0: Requirements and Hazard Analysis}. The scope covers all the behavioural, timing and software/hardware requirements tied the system. Additionally, this document addresses the modifications to the original requirements based on the implementation experience and feasibility checks conducted during the development process.
+	This validation and verification encompass the entire C.A.V.E. design, including software, electrical, and mechanical components. Requirements are defined in \href{https://github.com/4tb6-cave/capstone/blob/main/docs/HazardAnalysis/HazardAnalysis.pdf}{Revision 0: Requirements and Hazard Analysis}. The scope covers all the behavioural, timing, and software/hardware requirements tied the system. Additionally, this document addresses the modifications to the original requirements based on the implementation experience and feasibility checks conducted during the validation process.
 	
 	\section{Validation} 
 	
@@ -111,12 +111,12 @@
 	\subsubsection{RB2 (Removed)}
 	 
 	\begin{exampleblock}[red]
-		The confidence in the accuracy of C\_point\_cloud shall be represented by C\_confidence
+		The confidence in the accuracy of C\_point\_cloud shall be represented by C\_confidence.
 	\end{exampleblock}
 	
-	Our second behaviour requirement was as follows: “The confidence in the accuracy of C\_point\_cloud shall be represented by C\_confidence”. In the process of designing and implementing the algorithms for fusing the sensor data, we have concluded that this requirement is not necessary for the fulfillment of our goal. Providing a metric for the confidence of the system has proved to be a difficult thing and is not required to achieve the primary goal, which is to produce the point cloud. Our implementation either succeeds in fusing the data, or it fails to do so because of an error, but there is no intermediate state where the model is 50\% correct. 
+	In the process of designing and implementing the algorithms for fusing the sensor data, we have concluded that this requirement is not necessary for the fulfillment of our goal. Providing a metric for the confidence of the system has proved to be a difficult task and is not required to achieve the primary goal, which is to produce the point cloud. Our implementation either succeeds in fusing the data, or it fails to do so because of an error, but there is no intermediate state where the model is 50\% correct. 
 	
-	We considered replacing this requirement with a specification that the final point cloud needs to be accurate to the actual cave within a certain threshold, but there are a couple of issues with this. This would be practically the same as the first requirement. However, it would additionally include  error threshold numbers which we would have to arbitrarily decide. Testing this requirement would be impossible without additional expensive equipment like 3D LiDAR. Instead of adding this type or requirement, we decided that our testing for accuracy will have to be qualitative rather than quantitative, and that checking that the model is easily recognizable will be our most important test. This conclusion was based on discussions with Dr. Wassyng. 
+	We considered replacing this requirement with a specification that the final point cloud needs to be accurate to the actual cave within a certain threshold, but there are a couple of issues with this. This would be practically the same as the first requirement. However, it would additionally include  error threshold numbers which we would have to arbitrarily decide. Testing this requirement would be impossible without additional expensive equipment like 3D LiDAR. Instead of adding this type or requirement, we decided that our testing for accuracy will have to be qualitative rather than quantitative, and that checking that the features of the model are easily recognizable will be our most important test. This conclusion was based on discussions with Dr. Wassyng. 
 	
 	\subsubsection{RB3} 
 	
@@ -188,11 +188,11 @@
 	\section{Verification}
 	
 	%**Hard set of tests to check the requirements meet a certain level of performance. All tests must either pass or fail based on a threshold 
-	In this section, the verification process establishes objective tests with a pass/fail criteria that determine whether each requirement has been successfully implemented in the current system revision. Images for the tests are provided in 
+	In this section, the verification process establishes objective tests with a pass/fail criteria that determine whether each requirement has been successfully implemented in the current system revision. Images for the tests are provided in Appendix A.
 	
 	\subsection{Behavioural Requirements} 
 	
-	Several of these tests are well defined, such as those related to the hardware, but some of the algorithm performance metrics are more difficult to define and as mentioned above the requirements may be updated. At the current state of the project, several failures are expected, as much of the device/interface integration remains to be completed. 
+	Several of these tests are well defined, such as those related to the hardware, but some of the algorithm performance metrics are more difficult to define and as mentioned above the requirements have been modified. At the current state of the project, several failures are expected, as much of the device/interface integration remains to be completed. 
 	
 	\begin{tabularx}{\textwidth}{X p{0.25\textwidth} p{0.2\textwidth} X p{0.2\textwidth}}
 		\toprule
