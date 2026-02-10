@@ -32,11 +32,24 @@
 	
 	\maketitle
 	~\newpage
-	\tableofcontents
+	\pagenumbering{roman}
+	\renewcommand{\thetable}{\Roman{table}}
+	\setcounter{table}{0}
+	\begin{table}[hp]
+		\caption{Revision History} \label{TblRevisionHistory}
+		\begin{tabularx}{\textwidth}{llX}
+			\toprule
+			\textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
+			\midrule
+			February 1, 2026 & All Members & Initial Draft\\
+			\bottomrule
+		\end{tabularx}
+	\end{table}
+	
 	~\newpage
 	\section*{Glossary}
-	
-	\begin{table}[h]
+		\setcounter{table}{1}
+	\begin{table}[hp]
 		\centering
 		\begin{tabularx}{\textwidth}{X p{0.6\textwidth}}
 			\toprule
@@ -59,7 +72,17 @@
 	\end{table}
 	~\newpage
 	
+	{
+		\hypersetup{pdfborder = {0 0 0}}
+		\tableofcontents
+	}
+	
+	\cleardoublepage
+	\renewcommand{\thetable}{\arabic{table}}
+	\setcounter{table}{0}
+	
 	\section{Introduction}
+	\pagenumbering{arabic}
 	\subsection{Purpose}
 	
 	The purpose of this document is to validate and verify that the project requirements are feasible and achieve the objectives laid out in the contract. This serves as a checkpoint in the development process where we assess whether our software and hardware are capable of fulfilling the project requirements. The verificiation process provides a set pass/fail tests in which the status of the current revision is tested against ensuring requirement completion.
@@ -165,9 +188,9 @@
 	\section{Verification}
 	
 	%**Hard set of tests to check the requirements meet a certain level of performance. All tests must either pass or fail based on a threshold 
-	In this section, the verification process establishes objective tests with a pass/fail criteria that determine whether each requirement has been successfully implemented in the current system revision.
+	In this section, the verification process establishes objective tests with a pass/fail criteria that determine whether each requirement has been successfully implemented in the current system revision. Images for the tests are provided in 
 	
-	\subsection{Behavioural} 
+	\subsection{Behavioural Requirements} 
 	
 	Several of these tests are well defined, such as those related to the hardware, but some of the algorithm performance metrics are more difficult to define and as mentioned above the requirements may be updated. At the current state of the project, several failures are expected, as much of the device/interface integration remains to be completed. 
 	
@@ -182,7 +205,7 @@
 		T-RB2-0 & - & - & - & Requirement removed 
 		\\
 		\midrule
-		T-RB3-0 & Press button 1 after system power on & U7, U10 illuminates; recording starts & Fail & U7 illuminates, U10 and recording pending software integration. Button press recognized 
+		T-RB3-0 & Press button 1 after system power on & U7, U10 illuminates; recording starts & Fail & U7 illuminates, U10 and recording pending software integration. Button press recognized.
 		\\
 		\midrule
 		T-RB3-1 & Press button 2 after system power on & U8 illuminates & Pass & No software interaction yet. LED overly bright 
@@ -196,11 +219,6 @@
 		\caption{Verification Tests for Behavioural Requirements}
 	\end{tabularx}
 	
-	\begin{figure}[h]
-		\centering
-		\includegraphics[width=0.75\textwidth]{Images/Test_RB3}
-		\caption{Test T-RB3-0/1}
-	\end{figure}
 	
 	\subsection{Timing} 
 	
@@ -208,7 +226,7 @@
 	
 	To further improve this, we can switch to the Linux RT kernel which will make it easier for us to manage the real-time aspect of this project. The Linux RT API allows us to set deadlines for tasks, which would be essential if we need better precision. 
 	
-	\subsection{Hardware / Software Environment:}
+	\subsection{Hardware / Software Environment}
 	
 	The tests are very empirical and easy to determine. To test whether or not the system can run without internet we will run the same program both connected to the internet, and not connected to the internet, and it is expected that there will be no change in the result (as it is not internet dependent). The hardware environment is a bit harder to directly test due to variability, but the system is lightweight and has a small enough footprint it shouldn't hinder mobility. This could be tested by having the user traverse an area without the equipment, and with, and have weighted scaling to determine how much of a hinderance it is. \\
 	
@@ -220,13 +238,40 @@
 		\midrule
 		T-RE1-1 & Run the ICP algorithm on the same initial data with and without an internet connection & The ICP should have similar results on both runs, accounting for variability in the algorithm & Pass & None \\
 		\midrule
-		T-RE2-0 & Measure the overall weight of the design & The entire system should be under 2 kg & - & None\\
+		T-RE2-0 & Measure the overall weight of the design & The entire system should be under 2 kg & Pass & Total Mass of all components is around 0.5-0.7 kg: Helmet, Raspberry Pi, Sensors \\
 		\midrule
 		T-RE2-1 & Traverse a fixed location at a fixed path with and without the equipment & It should feel the exact same with and without everything worn, or at least not hinder mobility by a good margin & - & This is difficult to empirically decide due to it being opinionated and different for other users, but a general gist is needed. \\
 		\bottomrule
 		\caption{Verification Tests for Hardware/Software Requirements}
 	\end{tabularx}
 	
+	\newpage
+	\section{Appendix A: Verification Test Images}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\textwidth]{Images/Test_RB3}
+		\caption{Test T-RB3-0/1}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\textwidth}
+			\centering
+			\includegraphics[angle=270,width=\textwidth]{Images/Test_T-RE2-0a}
+			\caption*{(a) Test T-RE2-0 (Helmet)}
+		\end{minipage}\hfill
+		\begin{minipage}{0.48\textwidth}
+			\centering
+			\includegraphics[angle=270,width=\textwidth]{Images/Test_T-RE2-0b}
+			\caption*{(b) Test T-RE2-0 (Raspberry Pi 4)}
+		\end{minipage}
+		\caption{Test T-RE2-0}
+	\end{figure}
+	
+	
+	
+
 	
 	
 \end{document}
