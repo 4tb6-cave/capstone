@@ -26,7 +26,7 @@
 
 \title{\textbf{Revision 0: \\Validation and Verification \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
 \author{Abdul Rahim Khan \\ Andrew Brink \\ Gokberk Yilmaz \\ Nicholas Trimble \\ Tabish Faisal}
-\date{February 1, 2026}
+\date{February 10, 2026}
 
 \begin{document}
 	
@@ -42,6 +42,8 @@
 			\textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
 			\midrule
 			February 1, 2026 & All Members & Initial Draft\\
+			\midrule
+			February 10, 2026 & All Members & Finished Document\\
 			\bottomrule
 		\end{tabularx}
 	\end{table}
@@ -75,6 +77,8 @@
 	{
 		\hypersetup{pdfborder = {0 0 0}}
 		\tableofcontents
+		\listoffigures
+		\listoftables
 	}
 	
 	\cleardoublepage
@@ -154,7 +158,9 @@
 		Const\_capt\_rate shall be frequent enough to produce complete maps of an environment at a walking pace (3-5km/h)
 	\end{exampleblock}
 	
-	---Insert explanation here---
+	The rate of capture should not be so slow that the operator has to slow down significantly to allow it to function properly. At the same time, there is no need 
+	to capture more data than necessary. If the system captures enough data to reconstruct the scene when the operator is walking, that should provide a good balance 
+	of these two factors.
 	
 	\subsubsection{RT2}
 	
@@ -199,7 +205,10 @@
 		\textbf{Test} & \textbf{Procedure} & \textbf{Expected Result} & \textbf{Pass/Fail} & \textbf{Notes}
 		\\
 		\midrule
-		T-RB1-0 & Record data from ToF and IMU. Fuse data and pass oriented through ICP algorithm which outputs final point cloud. & Point cloud where the environment/scene can be recognized & Pass & Scan of small room was recognizable 
+		T-RB1-0 & Record data from ToF and IMU. Fuse data and pass oriented through ICP algorithm which outputs final point cloud. & Point cloud where the environment/scene can be easily recognized & Fail & Scan is not easily recognizable, although the results show some promise. See figures in appendix.
+		\\
+		\midrule
+		T-RB1-1 & Record data from ToF and IMU on to Raspberry Pi for duration of 10 minutes & Data is successfully recorded and no data is lost & Fail & USB errors in TOF sensor communication cause recording to fail after about 1 minute
 		\\
 		\midrule
 		T-RB2-0 & - & - & - & Requirement removed 
@@ -214,7 +223,7 @@
 		T-RB4-0 & & & &
 		\\
 		\midrule
-		T-RB5-0 & Use TOF sensor with the same scene in multiple lighting conditions (sunlight, darkness, flashlight) & All point clouds produced are identical & Pass (assumed) & I haven’t actually done this test, unless you count when we tested the sensor in the Thode meeting room \\
+		T-RB5-0 & Use TOF sensor with the same scene in good lighting and poor lighting conditions & All point clouds produced are practically identical & Pass & See pictures of test in appendix \\
 		\bottomrule
 		\caption{Verification Tests for Behavioural Requirements}
 	\end{tabularx}
@@ -250,8 +259,48 @@
 	
 	\begin{figure}[H]
 		\centering
+		\begin{minipage}{0.48\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{Images/Test_RB1_pic.jpg}
+			\caption*{(a) Test T-RB1-0 (Environment)}
+		\end{minipage}\hfill
+		\begin{minipage}{0.48\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{Images/Test_RB1_icp.png}
+			\caption*{(b) Test T-RB1-0 (Output of ICP algorithm)}
+		\end{minipage}
+		\caption{Test T-RB1-0}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
 		\includegraphics[width=0.75\textwidth]{Images/Test_RB3}
 		\caption{Test T-RB3-0/1}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}{0.48\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{Images/Test_RB5_dark_pic}
+			\caption*{(a) Test T-RB5-0 (Dark environment)}
+		\end{minipage}\hfill
+		\begin{minipage}{0.48\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{Images/Test_RB5_light_pic}
+			\caption*{(b) Test T-RB5-0 (Light environment)}
+		\end{minipage}
+		\begin{minipage}{0.48\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{Images/Test_RB5_dark_tof}
+			\caption*{(c) Test T-RB5-0 (Dark TOF capture)}
+		\end{minipage}\hfill
+		\begin{minipage}{0.48\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{Images/Test_RB5_light_tof}
+			\caption*{(d) Test T-RB5-0 (Light TOF capture)}
+		\end{minipage}
+		\caption{Test T-RB5-0}
 	\end{figure}
 	
 	\begin{figure}[H]
