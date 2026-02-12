@@ -1,0 +1,77 @@
+% Meeting 20
+	\pagebreak
+	\section*{Feb. 12, 2026}
+	\addcontentsline{toc}{section}{Meeting 20}
+
+	\textbf{C.A.V.E Attendees:} Tabish, Berk, Andrew, Nicholas\\
+	\textbf{Notetaker:} Nicholas
+
+	\subsection*{Post VnV meeting}
+		\subsubsection*{Agenda}
+			\begin{itemize}
+				\item Figure out next steps
+				\item Rev1 docs March 5
+			\end{itemize}
+
+		\subsubsection*{Minutes}
+			\begin{itemize}
+				\item Presentation three weeks from today for Rev1
+				\item Andrew to spend a few days during reading week on it 
+				\item Should basically be done at that point 
+				\item ToF is dying after 1 minute on USB, will attempt to use UART to avoid linux usb drivers
+				\item Check that gpio header is same between pi4 and pi5, as board is designed for 5
+				\item System integration- python or bash script to handle gpio, button turns on scanning
+				\item Systemd to launch script at startup
+				\item Python GPIO libraries work on pi4, not pi5
+				\item Header is fully backward compatible
+				\item Tabish will be away close to two weeks starting today
+				\item For rev1, want integration of buttons to start recording, 
+				\item all electrical stuff is basically done, unless we use uart for the Sensors
+				\item Figure out TOF running for longer
+				\item May want a new board to do 2x UART, I2C, buttons/leds
+				\item need to test interference between Sensors
+				\item if sensors are plugged in at same time, scans end up in phase and interfere with each other
+				\item At 180, no interference
+				\item even at 90 degrees apart, reflections cause interference 
+				\item 
+			\end{itemize}
+
+		\subsubsection*{Action Items}
+			\begin{itemize}
+				\item Ask Dr. Wassyng something
+				\item Finalize sensor positions
+				\item Fix 1 minute crash of TOFs
+				\item Figure out manual startup control of sensors to mitigate interference?
+			\end{itemize}
+
+	\subsection*{Prof Meeting - 11:15am - Dr. Wassyng, Dr. Rapoport}
+		\subsubsection*{Agenda}
+			\begin{itemize}
+				\item See action items
+			\end{itemize}
+
+		\subsubsection*{Minutes}
+			\begin{itemize}
+				\item Dont start all over again for next rev 
+				\item 2 tof fusion- may just be better off with 1 than dealing with fusion
+				\item can have the second as a redundant spare 
+				\item even at a cant between them, reflections are an issue
+				\item can discuss why we ended up with just one, why it was better 
+				\item SOlving the problem would take a long time, may not be solveable with these sensors 
+				\item For the persistence, could just reboot very quickly rather than have to stay online for 20min
+				\item Write up how more expensive sensor would have made the project easier, or more reliable. DOnt go trying to solve now, make what we have as robust as possible, and discuss the alternatives that could have worked
+				\item COmmon issue in capstone, money constraint holds accuracy back- engineering decision
+				\item Get on with the rest of it rather than trying to die on the hill of the 2 sensors 
+				\item Next presentation, address any comments from TA, add some revision history 
+				\item Make notes of anything you didnt address from TA feedback 
+				\item Document all the changes in reqs, design, etc and talk through 
+				\item For rev1 docs, just revise with feedback. Not making all new docs, just have revision history and reason for change 
+				\item Focus on building and testing at this stage
+				\item 
+			\end{itemize}
+
+		\subsubsection*{Action Items}
+			\begin{itemize}
+				\item 
+			\end{itemize}
+
