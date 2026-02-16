@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <filesystem>
+#include "CLI/CLI.hpp"
 
 #include <pcl/io/ply_io.h>
 #include <pcl/types.h>
@@ -61,37 +62,74 @@ void print_progress(int current, int total) {
 int main (int argc, char** argv) {
 
 	pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
-    // Check for correct number of arguments
-    if (argc < 5) {
-        throw std::runtime_error("Arguments missing!\n");
-        return 1;
-    }
 
-	std::string PLY_dir = argv[1];
-	int starting_frame = atoi(argv[2]);
-	int ending_frame = atoi(argv[3]);
-	if (ending_frame <= starting_frame) {
-		std::cerr << "Invalid frame range: ending_frame must be > starting_frame\n";
-		return 1;
-	}
+	CLI::App app{"ICP Point Cloud Registration"};
+
+	std::string PLY_dir;
+	int starting_frame = 0;
+	int ending_frame = 0;
 	float voxel_size = 0.01;
 	int poly_order = 0;
 	float search_radius = 0.05;
 	int num_points_sor = 100;
 	float std_dev_trim = 1;
 	bool enable_mls = false;
-	if (argc >= 5)
-		voxel_size = atof(argv[4]);
-	if (argc >= 6)
-		poly_order = atoi(argv[5]);
-	if (argc >= 7)
-		search_radius = atof(argv[6]);
-	if (argc >= 8)
-		num_points_sor = atoi(argv[7]);
-	if (argc >= 9)
-		std_dev_trim = atof(argv[8]);
-	if (argc >= 10)
-		enable_mls = (atoi(argv[9]) != 0);
+	bool enable_gicp = false;
+
+	app.add_option("PLY_dir", PLY_dir, "Directory containing PLY files")
+		->required();
+	app.add_option("--start", starting_frame, "Starting frame number")
+		->default_val(0);
+	app.add_option("--end", ending_frame, "Ending frame number")
+		->required();
+	app.add_option("--voxel_size", voxel_size, "Voxel size for downsampling")
+		->default_val(0.01);
+	app.add_option("--poly_order", poly_order, "Polynomial order for MLS")
+		->default_val(0);
+	app.add_option("--search_radius", search_radius, "Search radius for MLS")
+		->default_val(0.05);
+	app.add_option("--num_points_sor", num_points_sor, "Number of points for SOR filter")
+		->default_val(100);
+	app.add_option("--std_dev_trim", std_dev_trim, "Standard deviation for SOR filter")
+		->default_val(1);
+	app.add_option("--enable_mls", enable_mls, "Enable MLS for smoothing")
+		->default_val(false);
+	app.add_option("--enable_gicp", enable_gicp, "Enable GICP for registration")
+		->default_val(false);
+
+	CLI11_PARSE(app, argc, argv);
+
+    // Check for correct number of arguments
+    if (argc < 4) { 
+        throw std::runtime_error("Arguments missing!\n");
+        return 1;
+    }
+
+	// std::string PLY_dir = argv[1];
+	// int starting_frame = atoi(argv[2]);
+	// int ending_frame = atoi(argv[3]);
+	// if (ending_frame <= starting_frame) {
+	// 	std::cerr << "Invalid frame range: ending_frame must be > starting_frame\n";
+	// 	return 1;
+	// }
+	// float voxel_size = 0.01;
+	// int poly_order = 0;
+	// float search_radius = 0.05;
+	// int num_points_sor = 100;
+	// float std_dev_trim = 1;
+	// bool enable_mls = false;
+	// if (argc >= 5)
+	// 	voxel_size = atof(argv[4]);
+	// if (argc >= 6)
+	// 	poly_order = atoi(argv[5]);
+	// if (argc >= 7)
+	// 	search_radius = atof(argv[6]);
+	// if (argc >= 8)
+	// 	num_points_sor = atoi(argv[7]);
+	// if (argc >= 9)
+	// 	std_dev_trim = atof(argv[8]);
+	// if (argc >= 10)
+	// 	enable_mls = (atoi(argv[9]) != 0);
 
 
 	std::cout << "Starting frame: " << starting_frame << "\nEnding frame: " << ending_frame << "\nVoxel size: " << voxel_size << std::endl;
@@ -125,33 +163,39 @@ int main (int argc, char** argv) {
 		pcl::io::loadPLYFile(target_file.str(), *cloud_t);
 
 		// Run simple ICP algorithm for two point clouds
-		pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> gicp;
-		gicp.setInputSource(cloud_s);
-		gicp.setInputTarget(cloud_t);
-
-		// Set criteria for ICP termination
-		gicp.setTransformationEpsilon(1e-8);
-		//icp.setMaximumIterations(10);
-
-		// Store new aligned point cloud
-		gicp.align(*final_cloud);
-
-		if (gicp.hasConverged()) {
-			std::cout << "ICP has converged, score: " << gicp.getFitnessScore() << std::endl;
+		std::shared_ptr<pcl::Registration<pcl::PointXYZRGB, pcl::PointXYZRGB>> icp;
+		if (enable_gicp) {
+			icp = std::make_shared<pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB>>();
 		}
 		else {
-			std::cout << "ICP failed to converge! (score: " << gicp.getFitnessScore() << ") Quitting adding new frames." << std::endl;
-			break;
+			icp = std::make_shared<pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB>>();
 		}
+			icp->setInputSource(cloud_s);
+			icp->setInputTarget(cloud_t);
+
+			// Set criteria for ICP termination
+			icp->setTransformationEpsilon(1e-8);
+			//icp.setMaximumIterations(10);
+
+			// Store new aligned point cloud
+			icp->align(*final_cloud);
+
+			if (icp->hasConverged()) {
+				std::cout << "ICP has converged, score: " << icp->getFitnessScore() << std::endl;
+			}
+			else {
+				std::cout << "ICP failed to converge! (score: " << icp->getFitnessScore() << ") Quitting adding new frames." << std::endl;
+				break;
+			}
 		
-		Eigen::Matrix4f transform = gicp.getFinalTransformation();
-		full_transform = full_transform * transform;
-		std::cout << "Transformation between frames:\n" << transform << std::endl;
-		std::cout << "Full transformation back to original frame:\n" << full_transform << std::endl;
+			Eigen::Matrix4f transform = icp->getFinalTransformation();
+			full_transform = full_transform * transform;
+			std::cout << "Transformation between frames:\n" << transform << std::endl;
+			std::cout << "Full transformation back to original frame:\n" << full_transform << std::endl;
 		
-		// Transform the new point cloud and add to the full cloud
-		pcl::transformPointCloud(*cloud_t, *cloud_t, full_transform);
-		*full_cloud += *cloud_t;
+			// Transform the new point cloud and add to the full cloud
+			pcl::transformPointCloud(*cloud_t, *cloud_t, full_transform);
+			*full_cloud += *cloud_t;
 
 		processed_frames++;
 		print_progress(processed_frames, total_frames);

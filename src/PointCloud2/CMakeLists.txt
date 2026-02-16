@@ -16,8 +16,11 @@ add_executable(imu_extract src/imu_extract.cpp)
 ament_target_dependencies(point_cloud_extract rclcpp sensor_msgs rosbag2_cpp pcl_conversions)
 ament_target_dependencies(imu_extract rclcpp sensor_msgs rosbag2_cpp)
 
+target_include_directories(icp PRIVATE external/CLI11/include)
+
 target_link_libraries(point_cloud_extract ${PCL_LIBRARIES})
 target_link_libraries(icp ${PCL_LIBRARIES})
+
 
 install(TARGETS 
             point_cloud_extract 

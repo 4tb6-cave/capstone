@@ -5,7 +5,8 @@ RUN apt-get update && apt-get install -y \
 	libopencv-dev python3-opencv \
 	ros-humble-cv-bridge \
 	libpcl-dev \
-	ros-humble-pcl-conversions
+	ros-humble-pcl-conversions \
+  libcli11-dev
 
 ENV ROS_WS=/ros2_ws
 WORKDIR $ROS_WS
