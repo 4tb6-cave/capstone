@@ -18,11 +18,12 @@
 #include <pcl/pcl_base.h>
 #include <pcl/features/normal_3d.h>
 
-
+// Time stamp conversion function
 double timeStampToSec(const builtin_interfaces::msg::Time& t) {
   return double(t.sec) + 1e-9 * double(t.nanosec);
 }
 
+// Statistical Outlier Removal filter
 template <typename Point>
 typename pcl::PointCloud<Point>::Ptr sor_filter(
 	const typename pcl::PointCloud<Point>::ConstPtr input,
@@ -40,6 +41,7 @@ typename pcl::PointCloud<Point>::Ptr sor_filter(
 		return filter_PC;
 	}
 
+// Z-axis cropping filter
 template <typename Point>
 typename pcl::PointCloud<Point>::Ptr z_crop(
 	const typename pcl::PointCloud<Point>::ConstPtr input) {
@@ -58,7 +60,7 @@ typename pcl::PointCloud<Point>::Ptr z_crop(
 
 int main(int argc, char** argv){
 	if (argc < 2) {
-		std::cerr << "Missing Arguments! --> ./executable <path/to/bag/folder> [Mean for SOR] [Std. Dev for SOR] [cloud_topic]\n"; // CLI arguments
+		std::cerr << "Missing Arguments! --> ./point_cloud2_extract <path/to/bag/folder> [Mean for SOR] [Std. Dev for SOR] [cloud_topic]\n"; // CLI arguments
 			return 1;
 	}
 
@@ -74,13 +76,13 @@ int main(int argc, char** argv){
 	std::filesystem::create_directory(output_folder);
 	std::filesystem::create_directory(filtered_folder);
 
-  std::ofstream time_stamps(bag_path + "_time_stamps.csv");
-  if (!time_stamps.is_open()) {
-    std::cerr << "Failed to open output file: time_stamps.csv\n";
-    return 1;
-  }
-  time_stamps << "ID,Time\n" ;
-  time_stamps << std::fixed << std::setprecision(9);
+	std::ofstream time_stamps(bag_path + "_time_stamps.csv");
+	if (!time_stamps.is_open()) {
+		std::cerr << "Failed to open output file: time_stamps.csv\n";
+		return 1;
+	}
+	time_stamps << "ID,Time\n" ;
+	time_stamps << std::fixed << std::setprecision(9);
 
 	// Read the specified bag folder
 	std::cout << "Reading bag: " << argv[1] << std::endl;
@@ -103,22 +105,22 @@ int main(int argc, char** argv){
       time_stamps << frame_id << "," << t << "\n";
 			// Initialize an empty point cloud to store data from the ROS bag message
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-			pcl::PointCloud<pcl::Normal>::Ptr normal(new pcl::PointCloud<pcl::Normal>);
-			pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_with_normal(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
+			//pcl::PointCloud<pcl::Normal>::Ptr normal(new pcl::PointCloud<pcl::Normal>);
+			//pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_with_normal(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
 
 			pcl::fromROSMsg(*msg, *cloud);
 			
 			auto sor_cloud = sor_filter<pcl::PointXYZRGB>(cloud, mean, std);
 			auto filtered_cloud = z_crop<pcl::PointXYZRGB>(sor_cloud);
 			
-			auto normal_cloud = pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal>();
-			normal_cloud.setInputCloud(filtered_cloud);
-			auto tree = std::make_shared<pcl::search::KdTree<pcl::PointXYZRGB>>();
-			normal_cloud.setSearchMethod(tree);
-			normal_cloud.setKSearch(20);
+			//auto normal_cloud = pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal>();
+			//normal_cloud.setInputCloud(filtered_cloud);
+			//auto tree = std::make_shared<pcl::search::KdTree<pcl::PointXYZRGB>>();
+			//normal_cloud.setSearchMethod(tree);
+			//normal_cloud.setKSearch(20); 
 
-			normal_cloud.compute(*normal);
-			pcl::concatenateFields(*filtered_cloud, *normal, *cloud_with_normal);
+			//normal_cloud.compute(*normal);
+			//pcl::concatenateFields(*filtered_cloud, *normal, *cloud_with_normal);
 
 			// Writes and saves data to separate .ply files
 			std::ostringstream oss, oss_f;
@@ -128,7 +130,7 @@ int main(int argc, char** argv){
 			//std::cout << "Saved " << oss.str() << " (" << (*cloud).size() << " points)\n";
 
 			oss_f << filtered_folder << "/frame" << std::setfill('0') << std::setw(5) << frame_id++ << ".ply";
-			pcl::io::savePLYFileBinary(oss_f.str(), *cloud_with_normal);
+			pcl::io::savePLYFileBinary(oss_f.str(), *filtered_cloud);
 			//std::cout << "Saved " << oss_f.str() << " (" << (*cloud_with_normal).size() << " points)\n";
 
 		}
