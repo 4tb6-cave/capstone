@@ -1,0 +1,42 @@
+% Meeting 21
+	\pagebreak
+	\section*{Feb. 18, 2026}
+	\addcontentsline{toc}{section}{Meeting 21}
+
+	\textbf{C.A.V.E Attendees:} Tabish, Berk, Andrew, Nicholas\\
+	\textbf{Notetaker:} Nicholas
+
+	\subsection*{Online Reading Week meeting}
+		\subsubsection*{Agenda}
+			\begin{itemize}
+				\item Final project push
+			\end{itemize}
+
+		\subsubsection*{Minutes}
+			\begin{itemize}
+				\item UART interface ordered for TOF sensors, hopefully more reliable but same ROS connection
+				\item testing IMU integration with TOF, especially longer captures
+				\item Tabish to look into scripts to control hardware interactions
+				\item J-ICP work form Abdul improves the mapping
+				\item Added some cli interactions, timer on the ICP run, switched to new algo
+				\item also calculates normals
+				\item added mesh feature for 3d point cloud to look better (more solid)
+				\item andrew starting work on GTSAM optimized merging of IMU/TOF
+				\item It uses accel and ICP results together
+				\item Soft power off button would be more graceful, improve data integrity 
+				\item Use one light to show when storage is over 90\% capacity- script to check disk usage (df)
+				\item lidar- design a mount, may be simple to include and worth adding 
+				\item 
+			\end{itemize}
+
+		\subsubsection*{Action Items}
+			\begin{itemize}
+				\item Berk working on testing longer captures, IMU
+				\item Tabish working on hardware-software interaction, script to launch software, control leds
+				\item Abdul continuing probe in j-ICP
+				\item Andrew trying out GTSAM fusion
+				\item Berk to make some more TOF/IMU captures for Andrew+Abdul
+				\item Capture length needs to improve 
+				\item 
+			\end{itemize}
+
