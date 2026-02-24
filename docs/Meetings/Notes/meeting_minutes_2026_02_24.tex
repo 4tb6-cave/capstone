@@ -1,0 +1,45 @@
+% Meeting 22
+	\pagebreak
+	\section*{Feb. 24, 2026}
+	\addcontentsline{toc}{section}{Meeting 22}
+
+	\textbf{C.A.V.E Attendees:} Abdul, Andrew, Berk, Nicholas\\
+	\textbf{Notetaker:} Nicholas
+
+	\subsection*{Meeting with Dr. Giamou}
+		\subsubsection*{Agenda}
+			\begin{itemize}
+				\item Rev1 push, algo update
+			\end{itemize}
+
+		\subsubsection*{Minutes}
+			\begin{itemize}
+				\item Getting loop closure and using GTSAM on just IMU data
+				\item Working on integrating IMU data
+				\item Trying to correct drift
+				\item Using generalized ICP is much slower, got threading enabled, if we need extra oomf can use a CAS server
+				\item Covariance of the ICP result- can we get this? this helps GTSAM (by default give it identity)
+				\item Hallway problem elongates the covariance, harder to tell in one direction
+				\item Once we have accurate factor graph/poses, can add in lidar slices fairly easily
+				\item Nontrivial to get covariance- will probably leave for now
+				\item UART hasnt been tried yet, hopefully easy in ROS and hopefully fixes dropouts
+				\item Double integrating accelerometer difficult, later step. Just use IMU for orientation.
+				\item GTSAM has class for IMU, may have a built in tool to help us 
+				\item May be able to manually indicate loop closure points, possible off the shelf solution for 3d point clouds- ours is noisy and small so may be difficult
+				\item Open loop as a first step is good, closure will be difficult with our field of view 
+				\item Fine to manually add loop closure is fine, plus researcher in control means they can go in a loop actively
+				\item Helmet mounts mostly done 
+				\item Getting transformation matrices between sensor placements may be a problem. 
+				\item may retry double integration with bno85
+				\item Getting dropouts between i2c imu and pi 
+				\item check in before caving- they are dangerous. Giamou knows what hes doing
+				\item Expo april 7, may want to cave end of march. Giamou to start on forms now for faculty/uni approval
+			\end{itemize}
+
+		\subsubsection*{Action Items}
+			\begin{itemize}
+				\item Dial in algorithms
+				\item Physical integration
+				\item Ask Dr. Wassyng on Thursday if its the same procedure for a field trip vs Andrews summer research- if not have him email
+			\end{itemize}
+
