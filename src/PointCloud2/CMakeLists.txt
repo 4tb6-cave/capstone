@@ -12,20 +12,24 @@ find_package(pcl_conversions REQUIRED)
 add_executable(point_cloud_extract src/point_cloud2_extract.cpp)
 add_executable(icp src/icp_point_cloud.cpp)
 add_executable(imu_extract src/imu_extract.cpp)
+add_executable(assemble_point_cloud src/assemble_point_cloud.cpp)
 
 ament_target_dependencies(point_cloud_extract rclcpp sensor_msgs rosbag2_cpp pcl_conversions)
 ament_target_dependencies(imu_extract rclcpp sensor_msgs rosbag2_cpp)
 
-target_include_directories(icp PRIVATE external/CLI11/include)
+target_include_directories(icp PRIVATE ../includes/CLI)
+target_include_directories(assemble_point_cloud PRIVATE ../includes/CLI)
 
 target_link_libraries(point_cloud_extract ${PCL_LIBRARIES})
 target_link_libraries(icp ${PCL_LIBRARIES})
+target_link_libraries(assemble_point_cloud ${PCL_LIBRARIES})
 
 
 install(TARGETS 
             point_cloud_extract 
             icp
             imu_extract
+			assemble_point_cloud
 
         DESTINATION 
             lib/${PROJECT_NAME}
