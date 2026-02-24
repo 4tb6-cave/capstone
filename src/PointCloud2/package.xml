@@ -1,5 +1,5 @@
 <package format="3">
-	<name>pointCloud2</name>
+	<name>point_cloud2</name>
 	<version>0.0.1</version>
 	<description>Exports PointCloud data from ROS message</description>
 	<maintainer email="ak@testing.com">Abdul</maintainer>

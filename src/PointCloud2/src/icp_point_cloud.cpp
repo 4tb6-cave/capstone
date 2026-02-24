@@ -1,188 +1,224 @@
-// How to run: ./<executable> /path/to/ply/dir starting_frame ending_frame
+// How to run: ./<executable> /path/to/ply/dir starting_frame ending_frame [voxel_size] [poly_order] [search_radius] [num_points_sor] [std_dev_trim] [enable_mls]
 
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 #include <filesystem>
+#include "CLI11.hpp"
+#include <vector>
+#include <tuple>
+#include <atomic>
+#include <thread>
+#include <chrono>
+
 #include <pcl/io/ply_io.h>
 #include <pcl/types.h>
 #include <pcl/registration/icp.h>
-
+#include <pcl/registration/gicp.h>
 #include <pcl/point_cloud.h>
+#include <pcl/console/print.h>
 #include <pcl/common/transforms.h>
-#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/features/normal_3d.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/surface/mls.h>
-#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/surface/processing.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 
-template <typename Point>
-typename pcl::PointCloud<Point>::Ptr sor_filter(
-	const typename pcl::PointCloud<Point>::ConstPtr input,
-	int mean,
-	double std=1) {
-		
-		typename pcl::PointCloud<Point>::Ptr filter_PC(new pcl::PointCloud<Point>());
-		if (input->empty()) return filter_PC;
 
-		typename pcl::StatisticalOutlierRemoval<Point> sor_filter;
-		sor_filter.setInputCloud(input);
-		sor_filter.setMeanK(mean);
-		sor_filter.setStddevMulThresh(std);
-		sor_filter.filter(*filter_PC);
-		return filter_PC;
+void print_progress(int current, int total) {
+	if (total <= 0) return;
+	const int width = 40;
+	double ratio = static_cast<double>(current) / static_cast<double>(total);
+	if (ratio > 1.0) ratio = 1.0;
+	int filled = static_cast<int>(ratio * width);
+
+	std::cout << "\rICP Progress [";
+	for (int i = 0; i < width; ++i) {
+		std::cout << (i < filled ? '#' : '-');
 	}
+	std::cout << "] " << std::setw(3) << static_cast<int>(ratio * 100.0)
+	          << "% (" << current << "/" << total << ")";
+	std::cout.flush();
 
-int main (int argc, char** argv) {
+	if (current >= total) {
+		std::cout << std::endl;
+	}
+}
 
-    // Check for correct number of arguments
-    if (argc < 5) {
-        throw std::runtime_error("Arguments missing!\n");
-        return 1;
-    }
-
-	std::string PLY_dir = argv[1];
-	int starting_frame = atoi(argv[2]);
-	int ending_frame = atoi(argv[3]);
-	float voxel_size = 0.01;
-	int poly_order = 0;
-	float search_radius = 0.05;
-	int num_points_sor = 100;
-	float std_dev_trim = 1;
-	if (argc >= 5)
-		voxel_size = atof(argv[4]);
-	if (argc >= 6)
-		poly_order = atoi(argv[5]);
-	if (argc >= 7)
-		search_radius = atof(argv[6]);
-	if (argc >= 8)
-		num_points_sor = atoi(argv[7]);
-	if (argc >= 9)
-		std_dev_trim = atof(argv[8]);
-
-
-	std::cout << "Starting frame: " << starting_frame << "\nEnding frame: " << ending_frame << "\nVoxel size: " << voxel_size << std::endl;
-
-	pcl::PointCloud<pcl::PointXYZ>::Ptr full_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-	Eigen::Matrix4f full_transform = Eigen::Matrix4f::Identity();
-
-	std::ostringstream first_file;
-	first_file << PLY_dir << "/frame" << std::setw(5) << std::setfill('0') << starting_frame << ".ply";
-	pcl::io::loadPLYFile(first_file.str(), *full_cloud);
-
-	for (int i=starting_frame; i<ending_frame; i++)
+/**
+ * Save Eigen::Matrix4f to file
+ */
+void save_matrix(std::string filename, const Eigen::Matrix4f &matrix)
+{
+	const static Eigen::IOFormat csv_format(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", "\n");
+	std::ofstream file(filename);
+	if (file.is_open())
 	{
-
-	// open files. TODO: it shouldn't need to open every file twice. I don't know if this is slow enough to worry about.
-	std::ostringstream source_file, target_file;
-	source_file << PLY_dir << "/frame" << std::setw(5) << std::setfill('0') << i+1 << ".ply";
-	target_file << PLY_dir << "/frame" << std::setw(5) << std::setfill('0') << i << ".ply";
-	std::cout << "Opening " << source_file.str() << " and " << target_file.str() << std::endl;
-
-    // Initialize point clouds
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_s (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_t (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr final_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-
-    // Load .ply from command line argument to point cloud variable 
-    pcl::io::loadPLYFile(source_file.str(), *cloud_s);
-    pcl::io::loadPLYFile(target_file.str(), *cloud_t);
-
-    // Run simple ICP algorithm for two point clouds
-    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-    icp.setInputSource(cloud_s);
-    icp.setInputTarget(cloud_t);
-
-    // Set criteria for ICP termination
-    icp.setTransformationEpsilon(1e-8);
-    //icp.setMaximumIterations(10);
-
-    // Store new aligned point cloud
-    icp.align(*final_cloud);
-
-	if (icp.hasConverged())
-	{
-		std::cout << "ICP has converged, score: " << icp.getFitnessScore() << std::endl;
+		file << matrix.format(csv_format);
+		file.close();
 	}
 	else
 	{
-		std::cout << "ICP failed to converge! (score: " << icp.getFitnessScore() << ") Quitting adding new frames." << std::endl;
-		break;
+		std::cerr << "Failed to open " << filename << std::endl;
 	}
-    
-	Eigen::Matrix4f transform = icp.getFinalTransformation();
-	full_transform = full_transform * transform;
-	std::cout << "Transformation between frames:\n" << transform << std::endl;
-	std::cout << "Full transformation back to original frame:\n" << full_transform << std::endl;
-    
-	// Transform the new point cloud and add to the full cloud
-	pcl::transformPointCloud(*cloud_t, *cloud_t, full_transform);
-	*full_cloud += *cloud_t;
+}
 
-	// // Visualization
-	// printf(  "\nPoint cloud colors :  white  = original point cloud\n"
-	//     "                        red  = transformed point cloud\n");
-	// pcl::visualization::PCLVisualizer viewer ("Matrix transformation example");
-	//  // Define R,G,B colors for the point cloud
-	// pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> source_cloud_color_handler(cloud_s, 255, 255, 255);
-	// // We add the point cloud to the viewer and pass the color handler
-	// viewer.addPointCloud (cloud_s, source_cloud_color_handler, "original_cloud");
-	// pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> transformed_cloud_color_handler (cloud_t, 230, 20, 20); // Red
-	// viewer.addPointCloud (cloud_t, transformed_cloud_color_handler, "transformed_cloud");
-	// viewer.addCoordinateSystem (1.0, "cloud", 0);
-	// viewer.setBackgroundColor(0.05, 0.05, 0.05, 0); // Setting background to a dark grey
-	// viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "original_cloud");
-	// viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "transformed_cloud");
-	// //viewer.setPosition(800, 400); // Setting visualiser window position
-	// // while (!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
-	//   viewer.spin ();
-	// // }
+// Global progress monitor (atomic for thread safety)
+std::atomic<int> completed_tasks = 0;
 
+// Configuration passed to icp_thread function
+typedef struct icp_config
+{
+	std::string input_dir;
+	std::string output_dir;
+	bool enable_gicp;
+} icp_config_t;
+
+void icp_thread(icp_config_t config, std::vector<std::tuple<int, int>> icp_pairs)
+{
+	for (auto p : icp_pairs)
+	{
+		int source_number = std::get<0>(p);
+		int target_number = std::get<1>(p);
+		// std::cout << "ICP from " << source_number << " to " << target_number << std::endl;
+
+		// open files
+		std::ostringstream source_file, target_file;
+		source_file << config.input_dir << "/frame" << std::setw(5) << std::setfill('0') << source_number << ".ply";
+		target_file << config.input_dir << "/frame" << std::setw(5) << std::setfill('0') << target_number << ".ply";
+		// std::cout << "Opening " << source_file.str() << " and " << target_file.str() << std::endl;
+
+		// Initialize point clouds
+		pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+		pcl::PointCloud<pcl::PointXYZRGB>::Ptr target_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+		// Load .ply from command line argument to point cloud variable 
+		pcl::io::loadPLYFile(source_file.str(), *source_cloud);
+		pcl::io::loadPLYFile(target_file.str(), *target_cloud);
+
+		// Select type of ICP algorithm for two point clouds
+		std::shared_ptr<pcl::Registration<pcl::PointXYZRGB, pcl::PointXYZRGB>> icp;
+		if (config.enable_gicp)
+			icp = std::make_shared<pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB>>();
+		else
+			icp = std::make_shared<pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB>>();
+
+		icp->setInputSource(source_cloud);
+		icp->setInputTarget(target_cloud);
+
+		// Set criteria for ICP termination
+		icp->setTransformationEpsilon(1e-8);
+		//icp.setMaximumIterations(10);
+
+		// Perform ICP
+		icp->align(*source_cloud);
+
+		if (icp->hasConverged()) {
+			// std::cout << "ICP has converged, score: " << icp->getFitnessScore() << std::endl;
+		}
+		else {
+			std::cout << "ICP failed to converge! source: " << source_number << ", target: " << target_number << ", score: " << icp->getFitnessScore() << std::endl;
+			// break;
+		}
+	
+		Eigen::Matrix4f transform = icp->getFinalTransformation();
+		// std::cout << "Transformation between frames:\n" << transform << std::endl;
+
+		// Save transformation to file
+		std::ostringstream transform_file;
+		transform_file << config.output_dir << "/icp" << std::setw(5) << std::setfill('0') << source_number 
+			<< "_" << std::setw(5) << std::setfill('0') << target_number << ".csv";
+		save_matrix(transform_file.str(), transform);
+
+		completed_tasks++;
+	}
+}
+
+int main (int argc, char** argv) {
+
+	pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
+
+	CLI::App app{"ICP Point Cloud Registration"};
+
+	std::string PLY_dir;
+	int starting_frame = 0;
+	int ending_frame = 0;
+	bool enable_gicp = false;
+	std::string output_dir = "transforms";
+	std::vector<std::tuple<int, int>> loop_closure_pair;
+	int num_threads = 0;
+
+	app.add_option("PLY_dir", PLY_dir, "Directory containing PLY files")
+		->check(CLI::ExistingDirectory)->required();
+	app.add_option("--output_dir", output_dir, "Set directory to store ICP transformation results")
+		->default_val("transforms");
+	app.add_option("-s,--start", starting_frame, "Starting frame number")
+		->default_val(0);
+	app.add_option("-e,--end", ending_frame, "Ending frame number")
+		->required();
+	app.add_flag("-g,--enable_gicp", enable_gicp, "Enable GICP for registration");
+	app.add_option("-l,--loop_closure_pair", loop_closure_pair, "Add a pair of frames to perform ICP for loop closure");
+	app.add_option("--num_threads", num_threads, "Number of threads to use for ICP (default is equal to number of CPU cores)");
+
+	CLI11_PARSE(app, argc, argv);
+
+	if (num_threads == 0)
+	{
+		num_threads = std::thread::hardware_concurrency();
+		std::cout << "Using " << num_threads << " threads" << std::endl;
 	}
 
-	std::cerr << "PointCloud size before sor: " << full_cloud->width * full_cloud->height << std::endl;
-	std::cerr << "Number of points: " << num_points_sor << ", Std dev: " << std_dev_trim << std::endl;
-	auto sor_cloud = sor_filter<pcl::PointXYZ>(full_cloud, num_points_sor, std_dev_trim);
-	std::cerr << "PointCloud size after sor: " << sor_cloud->width * sor_cloud->height << std::endl;
+	// Create output directory in case it does not already exist
+	std::filesystem::create_directory(output_dir);
 
-	std::cerr << "PointCloud size before VoxelGrid: " << sor_cloud->width * sor_cloud->height << std::endl;
-	std::cerr << "Voxel size: " << voxel_size << std::endl;
-	pcl::VoxelGrid<pcl::PointXYZ> sor;
-	sor.setInputCloud(sor_cloud);
-	sor.setLeafSize(voxel_size, voxel_size, voxel_size);
-	sor.filter (*sor_cloud);
+	// Create vector containing all ICP tasks, including loop closure tasks
+	std::vector<std::tuple<int, int>> icp_tasks = loop_closure_pair;
+	for (int i = starting_frame; i < ending_frame; i++)
+	{
+		icp_tasks.emplace_back(i, i + 1);
+	}
 
-	std::cerr << "PointCloud size after VoxelGrid: " << sor_cloud->width * sor_cloud->height << std::endl;
+	// Split up all of these tasks and start the threads.
+	icp_config_t config;
+	config.enable_gicp = enable_gicp;
+	config.input_dir = PLY_dir;
+	config.output_dir = output_dir;
 
+	std::vector<std::thread> threads;
+	int start = 0;
+	int jobs_per_thread = icp_tasks.size() / num_threads;
+	int jobs_remainder = icp_tasks.size() % num_threads;
+	for (int i = 0; i < num_threads; i++)
+	{
+		int end = start + jobs_per_thread + (i < jobs_remainder ? 1 : 0);
+		auto jobs = std::vector<std::tuple<int, int>>(icp_tasks.begin() + start, icp_tasks.begin() + end);
+	
+		// Print which jobs have been assigned to each thread
+		std::cout << "Thread #" << i << ": ";
+		for (auto j : jobs)
+			std::cout << "(" << std::get<0>(j) << ", " << std::get<1>(j) << ") ";
+		std::cout << std::endl;
+	
+		threads.emplace_back(icp_thread, config, jobs);
+		start = end;
+	}
 
-	// Filter output with moving least squares
-	std::cout << "polynomial order: " << poly_order << ", search radius: " << search_radius << std::endl;
+	// Print status bar while waiting for tasks to complete
+	while (completed_tasks < icp_tasks.size())
+	{
+		print_progress(completed_tasks, icp_tasks.size());
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
 
-	// Create a KD-Tree
-	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+	for (std::thread& t : threads)
+	{
+		t.join();
+	}
 
-	// Output has the PointNormal type in order to store the normals calculated by MLS
-	pcl::PointCloud<pcl::PointNormal> mls_points;
+	std::cout << "\nICP complete, output files have been saved to " << output_dir << std::endl;
 
-	// Init object (second point type is for the normals, even if unused)
-	pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
-
-	mls.setComputeNormals(true);
-
-	// Set parameters
-	mls.setInputCloud(sor_cloud);
-	mls.setPolynomialOrder(poly_order);
-	mls.setSearchMethod(tree);
-	mls.setSearchRadius(search_radius);
-
-	// Reconstruct
-	mls.process(mls_points);
-
-	// Save the aligned point cloud as a .ply file
-    // std::filesystem::create_directory("ICP_Aligned_PC");
-	pcl::io::savePLYFileBinary("smoothed.ply", mls_points);
-    pcl::io::savePLYFileBinary("not_smoothed.ply", *sor_cloud);
-    std::cout << "Saved frame.\n";
-
-    return 0;
+	return 0;
 }

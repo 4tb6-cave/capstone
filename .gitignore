@@ -279,3 +279,8 @@ TSWLatexianTemp*
 .DS_Store
 
 .vscode
+
+# Build folders
+src/**/build/
+src/**/log/
+src/**/install/
