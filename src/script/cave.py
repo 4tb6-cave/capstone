@@ -19,7 +19,7 @@ GPIO_STORAGE_IND   = 27     #Battery Low aka LED2
 C_START_STOP = False        #true=running, false=not running
 C_START_STOP_D = False      #previous state to detect change- this is very state-machine-y
 C_STORAGE_THRES = 0.8       #fractional occupied space where warning begins
-C_SHUTDOWN = False
+C_SHUTDOWN = False          #True indicates the Pi will shut down on the next cycle
 C_DEBOUNCE = 20             #Button debouncing time, in ms
 C_LOOP_TIME = 0.1           #Loop delay, seconds
 
@@ -30,7 +30,7 @@ Button callbacks
 Input: None, called on ISR
 Output: Changed system state
 """
-def shutdown_isr():
+def shutdown_isr(): #gpiozero has mechanics for button press time; we should use this to require a long press to shut down
     C_SHUTDOWN = True
 
 def rec_toggle_isr():
@@ -67,12 +67,12 @@ GPIO.add_event_detect(GPIO_RECORD_TOGGLE, GPIO.FALLING, callback=rec_toggle_isr,
 
 #-#-# main loop #-#-#
 
-while not C_SHUTDOWN:
+while C_SHUTDOWN == False:
     #set past state a la 'shift register'
     C_START_STOP_D = C_START_STOP
-    
+
     #check storage
-    if check_capacity():
+    if check_capacity() == True:
         led_storage_ind.on()
 
     #'Rising edge', being recording
