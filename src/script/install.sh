@@ -4,11 +4,10 @@
 # 1. sets up Python environment
 # 2. configures cave.py to run on power on
 
-#install docker
-#install python3
-#install python3-docker
-
 apt-get -y --ignore-missing install $(< packages.list)
 
-#startup configuration
+#startup configuration- !!expects the capstone directory to be check out at ~/
 cp launch.desktop ~/.config/autostart
+
+#docker compose build to create containers- as long as its persistent between boots
+#rerun whenever code updated
