@@ -1,0 +1,12 @@
+#Service to run at bootup that launches the python script
+[Desktop Entry]
+Encoding=UTF-8
+Name=Cave
+Comment="CAVE startup script that runs the cave.py system"
+Exec=python ~/capstone/src/script/cave.py
+Terminal=false
+Type=Application
+Categories=
+
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=0

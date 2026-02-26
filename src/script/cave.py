@@ -6,7 +6,8 @@ Nicholas Trimble, 25/02/2026
 """
 import os
 import time
-import gpiozero as GPIO
+import gpiozero as GPIO     #should be included in most python installs
+import docker               #may not be in all environments
 
 #hardware constants
 GPIO_RECORD_TOGGLE = 17     #Button 1 aka U6 - LED U7 linked via hardware
