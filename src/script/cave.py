@@ -13,20 +13,28 @@ GPIO_RECORD_TOGGLE = 17     #Button 1 aka U6 - LED U7 linked via hardware
 GPIO_SHUTDOWN      = 4      #Button 2 aka U8 - LED U9 linked via hardware
 GPIO_RECORD_STATUS = 23     #Sensing aka U10
 GPIO_RECORD_ERROR  = 24     #Sensing Error aka LED1
-GPIO_BATTERY_IND   = 27     #Battery Low aka LED2
-
-#hardware objects
-but_record_toggle = GPIO.Button(GPIO_RECORD_TOGGLE)
-but_shutdown      = GPIO.Button(GPIO_SHUTDOWN)
-led_record_status = GPIO.LED(GPIO_RECORD_STATUS)
-led_record_error  = GPIO.LED(GPIO_RECORD_ERROR)
-led_battery_ind   = GPIO.LED(GPIO_BATTERY_IND)
+GPIO_STORAGE_IND   = 27     #Battery Low aka LED2
 
 #system constants
 C_START_STOP = False        #true=running, false=not running
+C_START_STOP_D = False      #previous state to detect change- this is very state-machine-y
 C_STORAGE_THRES = 0.8       #fractional occupied space where warning begins
+C_SHUTDOWN = False
+C_DEBOUNCE = 20             #Button debouncing time, in ms
+C_LOOP_TIME = 0.1           #Loop delay, seconds
 
-#startup
+#-#-# functions #-#-#
+
+"""
+Button callbacks
+Input: None, called on ISR
+Output: Changed system state
+"""
+def shutdown_isr():
+    C_SHUTDOWN = True
+
+def rec_toggle_isr():
+    C_START_STOP = not C_START_STOP
 
 """
 Determines whether the storage device is almost full as defined by C_STORAGE_THRES
@@ -34,30 +42,49 @@ Inputs: none
 Outputs: Boolean, True indicates storage has reached the threshold of being 'almost full'
 """
 def check_capacity():
-    storage_cap  = 2 #some os call
-    storage_used = 1 #some os call
-    storage_frac = storage_used / storage_cap
-    
+    #2 lines from: https://stackoverflow.com/questions/44182042/python-script-to-monitor-disk-space-from-df-and-send-e-mail-alert-when-over-thre
+    fs = os.statvfs("/")
+    storage_frac =  round((((fs.f_blocks - fs.f_bfree) * fs.f_frsize)/(fs.f_blocks * fs.f_bsize)), 2)
+    #print(storage_frac)
+
     if storage_frac >= C_STORAGE_THRES:
         return True
-    else
-        return False
-
-#monitoring loop
-while not but_shutdown.is_pressed:
-
-    #check storage
-    if 
-
-    #Begin recording
-    if but_record_toggle.is_pressed and not C_START_STOP:
-        C_START_STOP = True
-        #exec the capture script asynchronously
-
-    #End recording
-    else if but_record_toggle.is_pressed and C_START_STOP:
-        C_START_STOP = False
-        #
     else:
+        return False
+    
+#-#-# initialization #-#-#
 
-    time.sleep(100)
+#hardware objects
+but_record_toggle = GPIO.Button(GPIO_RECORD_TOGGLE)
+but_shutdown      = GPIO.Button(GPIO_SHUTDOWN)
+led_record_status = GPIO.LED(GPIO_RECORD_STATUS)
+led_record_error  = GPIO.LED(GPIO_RECORD_ERROR)
+led_storage_ind   = GPIO.LED(GPIO_STORAGE_IND)
+
+#button interrupt events
+GPIO.add_event_detect(GPIO_SHUTDOWN, GPIO.FALLING, callback=shutdown_isr, bouncetime=C_DEBOUNCE)
+GPIO.add_event_detect(GPIO_RECORD_TOGGLE, GPIO.FALLING, callback=rec_toggle_isr, bouncetime=C_DEBOUNCE)
+
+#-#-# main loop #-#-#
+
+while not C_SHUTDOWN:
+    #set past state a la 'shift register'
+    C_START_STOP_D = C_START_STOP
+    
+    #check storage
+    if check_capacity():
+        led_storage_ind.on()
+
+    #'Rising edge', being recording
+    if C_START_STOP == True and C_START_STOP_D == False:
+        led_record_status.on()
+        #exec recording
+
+    #'Falling edge', stop recording
+    elif C_START_STOP == False and C_START_STOP_D == True:
+        led_record_status.off()
+        #stop recording
+        #flush to disk (sync)
+
+    #loop delay
+    time.sleep(C_LOOP_TIME)
