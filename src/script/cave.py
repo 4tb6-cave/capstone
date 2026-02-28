@@ -6,8 +6,8 @@ Nicholas Trimble, 25/02/2026
 """
 import os
 import time
-import gpiozero as GPIO     #should be included in most python installs
-import docker               #may not be in all environments
+import gpiozero as GPIO
+import docker
 
 #hardware constants
 GPIO_RECORD_TOGGLE = 17     #Button 1 aka U6 - LED U7 linked via hardware
@@ -19,8 +19,8 @@ GPIO_STORAGE_IND   = 27     #Battery Low aka LED2
 #system constants
 C_START_STOP = False        #true=running, false=not running
 C_START_STOP_D = False      #previous state to detect change- this is very state-machine-y
-C_STORAGE_THRES = 0.8       #fractional occupied space where warning begins
 C_SHUTDOWN = False          #True indicates the Pi will shut down on the next cycle
+C_STORAGE_THRES = 0.8       #fractional occupied space where warning begins
 C_DEBOUNCE = 20             #Button debouncing time, in ms
 C_LOOP_TIME = 0.1           #Loop delay, seconds
 
@@ -89,3 +89,12 @@ while C_SHUTDOWN == False:
 
     #loop delay
     time.sleep(C_LOOP_TIME)
+
+#loop broken, time to shut down!
+os.sync()
+for s in range(1,6):
+    print(s, sep=" ")
+    time.sleep(1)
+print("\nShutting down!")
+time.sleep(1)
+os.system("systemctl poweroff") #this command may need sudo priveledges, also turning it back on requires powercycling
