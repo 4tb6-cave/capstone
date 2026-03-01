@@ -284,3 +284,6 @@ TSWLatexianTemp*
 src/**/build/
 src/**/log/
 src/**/install/
+
+# Ignore ros bags
+bag

@@ -25,7 +25,4 @@ sudo docker exec -it <container-name-or-id> bash
 ```
 
 # Next steps
-Add more services to docker-compose.yml for other components of the system.  
-Currently, only the tof sensor package is built. Add the rest of the required packages, either in 
-the same docker image or in seperate ones.  
 Remove need for sudo.  
