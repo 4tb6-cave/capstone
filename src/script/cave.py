@@ -22,7 +22,7 @@ C_START_STOP_D = False      #previous state to detect change- this is very state
 C_SHUTDOWN = False          #True indicates the Pi will shut down on the next cycle
 C_STORAGE_THRES = 0.8       #fractional occupied space where warning begins
 C_DEBOUNCE = 20             #Button debouncing time, in ms
-C_LOOP_TIME = 0.1           #Loop delay, seconds
+C_LOOP_TIME = 0.2           #Loop delay, seconds
 
 #-#-# functions #-#-#
 
@@ -32,12 +32,12 @@ Input: None, called on ISR
 Output: Changed system state
 """
 def shutdown_isr(): #gpiozero has mechanics for button press time; we should use this to require a long press to shut down
-    print("Shutdown ISR callback")
     C_SHUTDOWN = True
+    print(f"Shutdown ISR callback: Shutdown {C_SHUTDOWN}")
 
 def rec_toggle_isr():
-    print("Recording ISR callback")
     C_START_STOP = not C_START_STOP
+    print(f"Recording ISR callback: Start/stop {C_START_STOP}")
 
 """
 Determines whether the storage device is almost full as defined by C_STORAGE_THRES
