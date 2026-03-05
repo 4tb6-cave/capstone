@@ -17,6 +17,7 @@ add_executable(assemble_point_cloud src/assemble_point_cloud.cpp)
 ament_target_dependencies(point_cloud_extract rclcpp sensor_msgs rosbag2_cpp pcl_conversions)
 ament_target_dependencies(imu_extract rclcpp sensor_msgs rosbag2_cpp)
 
+target_include_directories(point_cloud_extract PRIVATE ../includes/CLI)
 target_include_directories(icp PRIVATE ../includes/CLI)
 target_include_directories(assemble_point_cloud PRIVATE ../includes/CLI)
 

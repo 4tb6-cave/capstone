@@ -281,9 +281,13 @@ TSWLatexianTemp*
 .vscode
 
 # Build folders
-src/**/build/
-src/**/log/
-src/**/install/
+**/build/
+**/log/
+**/install/
 
 # Ignore ros bags
 bag
+
+# Ignore data files
+*.csv
+*.ply

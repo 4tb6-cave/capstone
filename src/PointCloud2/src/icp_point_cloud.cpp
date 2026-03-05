@@ -143,18 +143,15 @@ int main (int argc, char** argv) {
 
 	CLI::App app{"ICP Point Cloud Registration"};
 
-	std::string PLY_dir;
+	std::string data_dir;
 	int starting_frame = 0;
 	int ending_frame = 0;
 	bool enable_gicp = false;
-	std::string output_dir = "transforms";
 	std::vector<std::tuple<int, int>> loop_closure_pair;
 	int num_threads = 0;
 
-	app.add_option("PLY_dir", PLY_dir, "Directory containing PLY files")
+	app.add_option("data_dir", data_dir, "Directory containing data including Filtered_Point_Clouds subdirectory with .PLY files")
 		->check(CLI::ExistingDirectory)->required();
-	app.add_option("--output_dir", output_dir, "Set directory to store ICP transformation results")
-		->default_val("transforms");
 	app.add_option("-s,--start", starting_frame, "Starting frame number")
 		->default_val(0);
 	app.add_option("-e,--end", ending_frame, "Ending frame number")
@@ -164,6 +161,9 @@ int main (int argc, char** argv) {
 	app.add_option("--num_threads", num_threads, "Number of threads to use for ICP (default is equal to number of CPU cores)");
 
 	CLI11_PARSE(app, argc, argv);
+
+	std::string PLY_dir = data_dir + "/Filtered_Point_Clouds";
+	std::string output_dir = data_dir + "/transforms";
 
 	if (num_threads == 0)
 	{

@@ -17,19 +17,20 @@ double timeStampToSec(const builtin_interfaces::msg::Time& t) {
 }
 int main (int argc, char** argv) {
 
-  if (argc < 2) { // How to run: ./executable <path/to/bag/folder> [imu_topic]
-    std::cerr << "Missing Arguments! | <required> ; [optional] --> ./executable <path/to/bag/folder> [imu_topic]\n";
+  if (argc < 3) { // How to run: ./executable <path/to/bag/folder> <path/to/output> [imu_topic]
+    std::cerr << "Missing Arguments! | <required> ; [optional] --> ./executable <path/to/bag/folder> <path/to/output> [imu_topic]\n";
     return 1;
   }
   
   std::string bag_path = argv[1];
-  std::string output_path = "Extracted_IMU_data_(" + bag_path + ")";
-  std::string imu_topic = (argc >= 3) ? std::string(argv[2]) : "/imu";
+  std::string output_path = argv[2];
+  std::string imu_topic = (argc >= 4) ? std::string(argv[3]) : "/imu";
  
   std::filesystem::create_directory(output_path);
-  std::ofstream imu_file(output_path + "/imu_(" + bag_path + ").csv");
+  std::string output_filename = output_path + "/imu.csv";
+  std::ofstream imu_file(output_filename);
   if (!imu_file.is_open()) {
-    std::cerr << "Failed to open output file: " << output_path << "/imu.csv\n";
+    std::cerr << "Failed to open output file: " << output_filename << std::endl;
     return 1;
   }
   imu_file << "time,o_x,o_y,o_z,o_w,av_x,av_y,av_z,la_x,la_y,la_z\n";
@@ -62,7 +63,7 @@ int main (int argc, char** argv) {
             imu_id++;
         }
     }
-    std::cout << "IMU file created: " << output_path << "/imu(" << imu_id << ").csv";
+    std::cout << "IMU file created: " << output_filename << ", saved " << imu_id << " measurements" << std::endl;
     return 0;
 
 }

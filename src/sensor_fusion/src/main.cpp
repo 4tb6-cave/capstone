@@ -86,21 +86,21 @@ int main(int argc, char **argv)
 {
 	CLI::App app{"GTSAM sensor fusion using ICP results and IMU"};
 
-	std::string transform_path = "transforms";
-	std::string pose_path = "poses";
+	std::string data_dir;
 	int starting_frame = 0;
 	int ending_frame = 0;
 
-	app.add_option("--transform_path", transform_path, "Set directory to read ICP transformation results")
+	app.add_option("data_dir", data_dir, "Directory which contains input data and where results will be stored")
 		->check(CLI::ExistingDirectory)->required();
-	app.add_option("--pose_path", pose_path, "Set directory to save output (4x4 transformation matrix representing pose)")
-		->default_val("poses");
-	app.add_option("--start", starting_frame, "Starting frame number")
+	app.add_option("-s,--start", starting_frame, "Starting frame number")
 		->default_val(0);
-	app.add_option("--end", ending_frame, "Ending frame number")
+	app.add_option("-e,--end", ending_frame, "Ending frame number")
 		->required();
 
 	CLI11_PARSE(app, argc, argv);
+
+	std::string transform_path = data_dir + "/transforms";
+	std::string pose_path = data_dir + "/poses";
 
 	// Create output directory in case it does not already exist
 	std::filesystem::create_directory(pose_path);

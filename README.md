@@ -36,3 +36,22 @@ Point clouds and IMU data come from the rosbags created in recording.
 ICP is used to estimate the transformation between point cloud frames.  
 GTSAM is used to fuse ICP transformation estimates with ICP (in progress) to find poses for each frame.  
 The point clouds are added together and filtered to remove excess points.
+
+
+Example of how I do this currently:
+```sh
+colcon build
+
+./build/point_cloud2/imu_extract bag/rosbag2_2026_03_03-02_10_08/ results
+./build/point_cloud2/point_cloud_extract bag/rosbag2_2026_03_03-02_10_08/ results --topic /cloud_one
+
+# inspect point clouds and choose starting and ending frame
+f3d results/Filtered_Point_Clouds
+
+./build/point_cloud2/icp results -s 0 -e 39 -g
+./build/sensor_fusion/sensor_fusion results --start 0 --end 39
+./build/point_cloud2/assemble_point_cloud results -s 0 -e 39 --random_sample 0.2
+
+f3d results/final_cloud.ply
+
+```
