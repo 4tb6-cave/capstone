@@ -81,8 +81,9 @@ void icp_thread(icp_config_t config, std::vector<std::tuple<int, int>> icp_pairs
 {
 	for (auto p : icp_pairs)
 	{
-		int source_number = std::get<0>(p);
-		int target_number = std::get<1>(p);
+		// Source is transformed to match target
+		int target_number = std::get<0>(p);
+		int source_number = std::get<1>(p);
 		// std::cout << "ICP from " << source_number << " to " << target_number << std::endl;
 
 		// open files
@@ -129,8 +130,8 @@ void icp_thread(icp_config_t config, std::vector<std::tuple<int, int>> icp_pairs
 
 		// Save transformation to file
 		std::ostringstream transform_file;
-		transform_file << config.output_dir << "/icp" << std::setw(5) << std::setfill('0') << source_number 
-			<< "_" << std::setw(5) << std::setfill('0') << target_number << ".csv";
+		transform_file << config.output_dir << "/icp" << std::setw(5) << std::setfill('0') << target_number 
+			<< "_" << std::setw(5) << std::setfill('0') << source_number << ".csv";
 		save_matrix(transform_file.str(), transform);
 
 		completed_tasks++;

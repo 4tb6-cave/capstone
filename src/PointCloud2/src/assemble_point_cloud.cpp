@@ -152,7 +152,8 @@ int main (int argc, char** argv) {
 		// std::cout << "Transformation for frame " << i << ": \n" << transform << std::endl;
 	
 		// Transform the new point cloud and add to the full cloud
-		pcl::transformPointCloud(*new_cloud, *new_cloud, transform);
+		Eigen::Matrix4d transform_inverse = transform.inverse();
+		pcl::transformPointCloud(*new_cloud, *new_cloud, transform_inverse);
 		*full_cloud += *new_cloud;
 	}
 

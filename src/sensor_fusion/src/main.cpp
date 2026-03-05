@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <filesystem>
 #include <regex>
+#include <vector>
 
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/inference/Key.h>
@@ -12,10 +13,23 @@
 #include <gtsam/nonlinear/GaussNewtonOptimizer.h>
 #include <gtsam/nonlinear/Marginals.h>
 #include <gtsam/nonlinear/Values.h>
+#include <gtsam/inference/Symbol.h>
+#include <gtsam/navigation/ImuFactor.h>
 
 #include <CLI11.hpp>
 
 using namespace gtsam;
+
+using symbol_shorthand::B;  // Bias  (ax,ay,az,gx,gy,gz)
+using symbol_shorthand::V;  // Vel   (xdot,ydot,zdot)
+using symbol_shorthand::X;  // Pose3 (x,y,z,r,p,y)
+
+
+// TODO:
+// - figure out covariance values for IMU and for ICP
+// - Add an option to use precomputed quaternions from IMU, include as PoseRotationPrior factors
+// - Add translation from IMU frame to ToF frame
+
 
 /**
  * Function to load matrix from csv file
@@ -82,6 +96,174 @@ bool saveMatrix4d(std::string filename, const Eigen::Matrix4d &matrix)
 	}
 }
 
+bool loadTimestamps(std::string filename, std::vector<double> &timestamps)
+{
+	timestamps.clear();
+	std::ifstream file(filename);
+	if (!file.is_open())
+	{
+		std::cerr << "Failed to open " << filename << std::endl;
+		return false;
+	}
+
+	std::string line;
+	int frame = 0;
+	std::getline(file, line); // discard first line
+	while (std::getline(file, line))
+	{
+		std::stringstream ss(line);
+		std::string value;	
+		if (!std::getline(ss, value, ','))
+		{
+			std::cerr << "Invalid data in " << filename << ": failed to read id" << std::endl;
+			return false;
+		}
+		if (std::stoi(value) != frame)
+		{
+			continue; // only save if frame number makes sense
+		}
+		if (!std::getline(ss, value, ','))
+		{
+			std::cerr << "Invalid data in " << filename << ": failed to read timestamp" << std::endl;
+			return false;
+		}
+		timestamps.push_back(std::stod(value));
+		frame++;
+	}
+	return true;
+}
+
+boost::shared_ptr<PreintegrationParams> imuParams()
+{
+	// We use the sensor specs to build the noise model for the IMU factor.
+	// TODO: add correct values!! or make this configurable for different sensors with an external file?
+	double accel_noise_sigma = 0.1;
+	double gyro_noise_sigma = 0.1;
+	double accel_bias_rw_sigma = 0.001;
+	double gyro_bias_rw_sigma = 0.001;
+	Matrix33 measured_acc_cov = I_3x3 * pow(accel_noise_sigma, 2);
+	Matrix33 measured_omega_cov = I_3x3 * pow(gyro_noise_sigma, 2);
+	Matrix33 integration_error_cov =
+		I_3x3 * 1e-4; // error committed in integrating position from velocities
+	Matrix33 bias_acc_cov = I_3x3 * pow(accel_bias_rw_sigma, 2);
+	Matrix33 bias_omega_cov = I_3x3 * pow(gyro_bias_rw_sigma, 2);
+
+	auto p = PreintegrationParams::MakeSharedU(9.81); // gravity vector points in -z
+	// PreintegrationBase params:
+	p->accelerometerCovariance =
+		measured_acc_cov; // acc white noise in continuous
+	p->integrationCovariance =
+		integration_error_cov; // integration uncertainty continuous
+	// should be using 2nd order integration
+	// PreintegratedRotation params:
+	p->gyroscopeCovariance =
+		measured_omega_cov; // gyro white noise in continuous
+
+	p->use2ndOrderCoriolis = false;
+
+	return p;
+}
+
+// Add IMU to factor graph
+bool imu_preintegration(NonlinearFactorGraph &graph, std::string imu_filename,
+						std::vector<double> frame_time, int first_frame, int last_frame)
+{
+	std::ifstream file(imu_filename);
+	if (!file.is_open())
+	{
+		std::cerr << "Failed to open " << imu_filename << std::endl;
+		return false;
+	}
+
+	// add priors to graph for V and B
+	auto velocity_noise_model = noiseModel::Isotropic::Sigma(3, 0.1);  // m/s
+	auto bias_noise_model = noiseModel::Isotropic::Sigma(6, 1e-3);
+	graph.addPrior(V(first_frame), Vector3(0, 0, 0), velocity_noise_model);
+	graph.addPrior(B(first_frame), imuBias::ConstantBias(Vector6(0, 0, 0, 0, 0, 0)), bias_noise_model); // should the covariance for this first one be greater than for between the others?
+
+
+	imuBias::ConstantBias prior_imu_bias;  // assume zero initial bias
+	auto p = imuParams();
+	PreintegratedImuMeasurements preintegrated(p, prior_imu_bias);
+
+	std::string line;
+	int row = 0;
+	const int num_cols = 11;
+	double values[num_cols]; // time,o_x,o_y,o_z,o_w,av_x,av_y,av_z,la_x,la_y,la_z
+
+	double cur_time;
+	double prev_time = -1;
+
+	int frame = first_frame;
+
+	// IMU and ToF sensor are probably out of sync, so for now it assumed that the ToF sensor measurement
+	// happened at the exact same time as the IMU measurement immediately preceding it. Probably good enough for now.
+
+	// TODO: what if IMU starts recording after several frames of ToF data are already saved??
+
+	std::getline(file, line); // discard first line
+
+	while (std::getline(file, line))
+	{
+		// Read IMU data
+		std::stringstream ss(line);
+		std::string value;
+		int col = 0;
+		while (std::getline(ss, value, ',') && col < num_cols)
+		{
+			values[col] = std::stod(value);
+			col++;
+		}
+		Eigen::Vector3d acc, omega;
+		acc << values[8], values[9], values[10];
+		omega << values[5], values[6], values[7];
+		cur_time = values[0];
+
+		// Use IMU data
+		if (values[0] < frame_time[frame]) // check if time is in the right range
+		{
+			if (frame == first_frame)
+				continue; // values before first frame are discarded
+		}
+		else
+		{
+			if (frame != first_frame)
+			{
+				// add factor into graph
+				ImuFactor imu_factor(X(frame - 1), V(frame - 1), X(frame), V(frame), B(frame - 1), preintegrated);
+				graph.add(imu_factor);
+			}
+
+			frame++;
+			if (frame > last_frame)
+			{
+				// complete
+				break;
+			}
+
+			// reset integration
+			preintegrated.resetIntegration();
+
+		}
+
+		// preintegrate IMU
+		double dt = 0.01; //(prev_time != -1) ? (cur_time - prev_time) : 0.01; // default 100 Hz (TODO improve this)
+		preintegrated.integrateMeasurement(acc, omega, dt);
+		prev_time = cur_time;
+
+	}
+
+
+	imuBias::ConstantBias zero_bias(Vector3(0, 0, 0), Vector3(0, 0, 0));
+	for (int f = first_frame; f < last_frame; f++)
+	{
+		// add bias factors
+		graph.add(BetweenFactor<imuBias::ConstantBias>(B(f), B(f + 1), zero_bias, bias_noise_model));
+	}
+
+	return true;
+}
+
 int main(int argc, char **argv)
 {
 	CLI::App app{"GTSAM sensor fusion using ICP results and IMU"};
@@ -89,6 +271,7 @@ int main(int argc, char **argv)
 	std::string data_dir;
 	int starting_frame = 0;
 	int ending_frame = 0;
+	bool enable_preintegration = false;
 
 	app.add_option("data_dir", data_dir, "Directory which contains input data and where results will be stored")
 		->check(CLI::ExistingDirectory)->required();
@@ -96,11 +279,22 @@ int main(int argc, char **argv)
 		->default_val(0);
 	app.add_option("-e,--end", ending_frame, "Ending frame number")
 		->required();
+	app.add_flag("--enable_imu_preint", enable_preintegration, "Enable IMU preintegration")
+		->default_val(false);
 
 	CLI11_PARSE(app, argc, argv);
 
 	std::string transform_path = data_dir + "/transforms";
 	std::string pose_path = data_dir + "/poses";
+	std::string imu_filename = data_dir + "/imu.csv";
+	std::string frame_timestamps_filename = data_dir + "/time_stamps.csv";
+
+	//load timestamps
+	std::vector<double> frame_timestamps;
+	if (!loadTimestamps(frame_timestamps_filename, frame_timestamps) || frame_timestamps.size() < ending_frame)
+	{
+		std::cerr << "Failed to load timestamps from " << frame_timestamps_filename << std::endl;
+	}
 
 	// Create output directory in case it does not already exist
 	std::filesystem::create_directory(pose_path);
@@ -110,11 +304,11 @@ int main(int argc, char **argv)
 
 	// Add a prior on the first pose, setting it to the origin
 	// A prior factor consists of a mean and a noise model (covariance matrix)
-	noiseModel::Diagonal::shared_ptr priorNoise = noiseModel::Diagonal::Sigmas(Vector6(0.01, 0.01, 0.01, 0.01, 0.01, 0.01)); // TODO what values?
-	graph.addPrior(starting_frame, Pose3(Rot3::Identity(), Point3(0, 0, 0)), priorNoise);
+	noiseModel::Diagonal::shared_ptr priorNoise = noiseModel::Diagonal::Sigmas(Vector6(0.001, 0.001, 0.001, 0.001, 0.001, 0.001)); // TODO what values?
+	graph.addPrior(X(starting_frame), Pose3(Rot3::Identity(), Point3(0, 0, 0)), priorNoise);
 
 	// TODO: We really need a covariance matrix for each ICP result! this is just a wild guess
-	noiseModel::Diagonal::shared_ptr model = noiseModel::Diagonal::Sigmas(Vector6(0.1, 0.1, 0.1, 0.1, 0.1, 0.1));
+	noiseModel::Diagonal::shared_ptr model = noiseModel::Diagonal::Sigmas(Vector6(0.001, 0.001, 0.001, 0.001, 0.001, 0.001));
 
 
 	// TODO: it would be nice if the files were sorted, for debugging, but it really doesn't matter
@@ -142,10 +336,14 @@ int main(int argc, char **argv)
 			Eigen::Matrix4d transform_matrix;
 			if (loadMatrix4d(file.path().string(), transform_matrix))
 			{
-				graph.emplace_shared<BetweenFactor<Pose3>>(node1, node2, Pose3(transform_matrix), model);
+				graph.emplace_shared<BetweenFactor<Pose3>>(X(node1), X(node2), Pose3(transform_matrix), model);
 			}
 		}
 	}
+
+	// Add IMU preintegration factors
+	if (enable_preintegration)
+		imu_preintegration(graph, imu_filename, frame_timestamps, starting_frame, ending_frame);
 
 	graph.print("\nFactor Graph:\n"); // print complete graph
 
@@ -153,7 +351,14 @@ int main(int argc, char **argv)
 	Values initialEstimate;
 	for (int i = starting_frame; i <= ending_frame; i++)
 	{
-		initialEstimate.insert(i, Pose3(Rot3::Identity(), Point3(0, 0, 0)));
+		initialEstimate.insert(X(i), Pose3(Rot3::Identity(), Point3(0, 0, 0)));
+
+		// for IMU
+		if (enable_preintegration)
+		{
+			initialEstimate.insert(V(i), Vector3(0, 0, 0));
+			initialEstimate.insert(B(i), imuBias::ConstantBias(Vector6(0, 0, 0, 0, 0, 0)));
+		}
 	}
 	// initialEstimate.print("\nInitial Estimate:\n"); // print
 
@@ -184,7 +389,7 @@ int main(int argc, char **argv)
 	// Save poses to files
 	for (int i = starting_frame; i <= ending_frame; i++)
 	{
-		Eigen::Matrix4d transform = result.at<Pose3>(i).matrix();
+		Eigen::Matrix4d transform = result.at<Pose3>(X(i)).matrix();
 		std::ostringstream transform_file;
 		transform_file << pose_path << "/pose" << std::setw(5) << std::setfill('0') << i << ".csv";
 		saveMatrix4d(transform_file.str(), transform);
