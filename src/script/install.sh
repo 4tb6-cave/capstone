@@ -4,6 +4,7 @@
 #Sets up device environment on an Ubuntu host
 # 1. sets up Python environment
 # 2. configures cave.py to run on power on
+#To disable, simply delete the config file at ~/.config/autostart/launch.desktop
 
 pushd ~/capstone/src/scripts
 apt-get -y --ignore-missing install $(< packages.list)

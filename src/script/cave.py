@@ -32,10 +32,12 @@ Input: None, called on ISR
 Output: Changed system state
 """
 def shutdown_isr(): #gpiozero has mechanics for button press time; we should use this to require a long press to shut down
+    global C_SHUTDOWN
     C_SHUTDOWN = True
     print(f"Shutdown ISR callback: Shutdown {C_SHUTDOWN}")
 
 def rec_toggle_isr():
+    global C_START_STOP
     C_START_STOP = not C_START_STOP
     print(f"Recording ISR callback: Start/stop {C_START_STOP}")
 
@@ -65,7 +67,8 @@ led_record_error  = GPIO.LED(GPIO_RECORD_ERROR)
 led_storage_ind   = GPIO.LED(GPIO_STORAGE_IND)
 
 #button interrupt events
-but_shutdown.when_pressed = shutdown_isr
+but_shutdown.hold_time = 3
+but_shutdown.when_held = shutdown_isr
 but_record_toggle.when_pressed = rec_toggle_isr
 
 #-#-# main loop #-#-#

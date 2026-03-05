@@ -3,7 +3,7 @@
 Encoding=UTF-8
 Name=Cave
 Comment="CAVE startup script that runs the cave.py system"
-Exec=python ~/capstone/src/script/cave.py
+Exec=sudo python ~/capstone/src/script/cave.py
 Terminal=false
 Type=Application
 Categories=
