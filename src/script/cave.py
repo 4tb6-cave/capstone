@@ -32,9 +32,11 @@ Input: None, called on ISR
 Output: Changed system state
 """
 def shutdown_isr(): #gpiozero has mechanics for button press time; we should use this to require a long press to shut down
+    print("Shutdown ISR callback")
     C_SHUTDOWN = True
 
 def rec_toggle_isr():
+    print("Recording ISR callback")
     C_START_STOP = not C_START_STOP
 
 """
@@ -46,7 +48,7 @@ def check_capacity():
     #2 lines from: https://stackoverflow.com/questions/44182042/python-script-to-monitor-disk-space-from-df-and-send-e-mail-alert-when-over-thre
     fs = os.statvfs("/")
     storage_frac =  round((((fs.f_blocks - fs.f_bfree) * fs.f_frsize)/(fs.f_blocks * fs.f_bsize)), 2)
-    #print(storage_frac)
+    print(storage_frac)
 
     if storage_frac >= C_STORAGE_THRES:
         return True
@@ -63,8 +65,8 @@ led_record_error  = GPIO.LED(GPIO_RECORD_ERROR)
 led_storage_ind   = GPIO.LED(GPIO_STORAGE_IND)
 
 #button interrupt events
-GPIO.add_event_detect(GPIO_SHUTDOWN, GPIO.FALLING, callback=shutdown_isr, bouncetime=C_DEBOUNCE)
-GPIO.add_event_detect(GPIO_RECORD_TOGGLE, GPIO.FALLING, callback=rec_toggle_isr, bouncetime=C_DEBOUNCE)
+but_shutdown.when_pressed = shutdown_isr
+but_record_toggle.when_pressed = rec_toggle_isr
 
 #-#-# main loop #-#-#
 
