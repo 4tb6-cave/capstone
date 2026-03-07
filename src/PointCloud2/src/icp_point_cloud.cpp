@@ -1,5 +1,16 @@
-// How to run: ./<executable> /path/to/ply/dir starting_frame ending_frame [voxel_size] [poly_order] [search_radius] [num_points_sor] [std_dev_trim] [enable_mls]
+/*
+Performs ICP and saves transformations between frames to .csv files
+Use -h for details on usage.
 
+
+TODO:
+Performance improvement: the current method of splitting up the jobs is not optimal. It should instead have one list
+of jobs which each thread dynamically chooses from until they are all done, so that all threads are working until the
+very end. However this would be a little more complicated to implement and ensure thread safety.
+
+ */
+
+ 
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -213,6 +224,7 @@ int main (int argc, char** argv) {
 		print_progress(completed_tasks, icp_tasks.size());
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
+	print_progress(completed_tasks, icp_tasks.size()); // to show that it is complete
 
 	for (std::thread& t : threads)
 	{

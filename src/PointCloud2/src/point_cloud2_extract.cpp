@@ -66,6 +66,7 @@ int main(int argc, char** argv){
 
 	std::string bag_path;
 	std::string output_dir;
+	bool disable_sor = false;
 	int sor_num_points = 150;
 	double sor_std_dev = 1.0;
 	std::string topic = "/cloud";
@@ -74,6 +75,8 @@ int main(int argc, char** argv){
 		->check(CLI::ExistingDirectory)->required();
 	app.add_option("output_dir", output_dir, "Directory in which to save output results")
 		->check(CLI::ExistingDirectory)->required();
+	app.add_flag("--disable_sor", disable_sor, "Disable SOR filter")
+		->default_val(false);
 	app.add_option("--sor_num_points", sor_num_points, "Number of points for SOR filter")
 		->default_val(150);
 	app.add_option("--sor_std_dev", sor_std_dev, "Standard deviation for SOR filter")
@@ -125,8 +128,11 @@ int main(int argc, char** argv){
 
 			pcl::fromROSMsg(*msg, *cloud);
 			
-			auto sor_cloud = sor_filter<pcl::PointXYZRGB>(cloud, sor_num_points, sor_std_dev);
-			auto filtered_cloud = z_crop<pcl::PointXYZRGB>(sor_cloud);
+			auto filtered_cloud = z_crop<pcl::PointXYZRGB>(cloud);
+			if (!disable_sor)
+			{
+				*filtered_cloud = *(sor_filter<pcl::PointXYZRGB>(filtered_cloud, sor_num_points, sor_std_dev));
+			}
 			
 			//auto normal_cloud = pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal>();
 			//normal_cloud.setInputCloud(filtered_cloud);

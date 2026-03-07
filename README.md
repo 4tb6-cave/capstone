@@ -50,7 +50,7 @@ f3d results/Filtered_Point_Clouds
 
 ./build/point_cloud2/icp results -s 0 -e 39 -g
 ./build/sensor_fusion/sensor_fusion results --start 0 --end 39
-./build/point_cloud2/assemble_point_cloud results -s 0 -e 39 --random_sample 0.2
+./build/point_cloud2/assemble_point_cloud results -s 0 -e 39 --random_sample 0.2 --voxel_size 0.001
 
 f3d results/final_cloud.ply
 
