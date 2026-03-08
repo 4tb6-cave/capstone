@@ -4,8 +4,11 @@ Runs on boot to handle GPIO interactions (buttons, LEDs) and manage the status o
 mainly starting and stopping the capture process in ROS.
 Nicholas Trimble, 25/02/2026
 """
+
+open("/home/mscp/run.txt", "w") #indicate script has run
 import os
 import time
+import subprocess
 import gpiozero as GPIO
 import docker
 
@@ -50,7 +53,7 @@ def check_capacity():
     #2 lines from: https://stackoverflow.com/questions/44182042/python-script-to-monitor-disk-space-from-df-and-send-e-mail-alert-when-over-thre
     fs = os.statvfs("/")
     storage_frac =  round((((fs.f_blocks - fs.f_bfree) * fs.f_frsize)/(fs.f_blocks * fs.f_bsize)), 2)
-    print(storage_frac)
+    #print(storage_frac)
 
     if storage_frac >= C_STORAGE_THRES:
         return True
@@ -73,6 +76,7 @@ but_record_toggle.when_pressed = rec_toggle_isr
 
 #-#-# main loop #-#-#
 
+print("Begin process")
 while C_SHUTDOWN == False:
     #set past state a la 'shift register'
     C_START_STOP_D = C_START_STOP
@@ -84,22 +88,32 @@ while C_SHUTDOWN == False:
     #'Rising edge', being recording
     if C_START_STOP == True and C_START_STOP_D == False:
         led_record_status.on()
-        #exec recording
+        # start the docker container for recording
+        try:
+            subprocess.run(["docker", "compose", "up", "-d", "tof"], cwd="/home/mscp/capstone/src", check=True)
+            print("Started TOF recording container")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to start container: {e}")
+            led_record_error.on()
 
     #'Falling edge', stop recording
     elif C_START_STOP == False and C_START_STOP_D == True:
         led_record_status.off()
-        #stop recording
-        #flush to disk (sync)
+        # stop the docker container
+        try:
+            subprocess.run(["docker", "compose", "down"], cwd="/home/mscp/capstone/src", check=True)
+            print("Stopped recording container")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to stop container: {e}")
+            led_record_error.on()
+        os.sync()
 
     #loop delay
     time.sleep(C_LOOP_TIME)
 
 #loop broken, time to shut down!
 os.sync()
-for s in range(1,6):
-    print(s, sep=" ")
+for s in range(5,0,-1):
+    print(s)
     time.sleep(1)
-print("\nShutting down!")
-time.sleep(1)
 os.system("systemctl poweroff") #this command may need sudo priveledges, also turning it back on requires powercycling
