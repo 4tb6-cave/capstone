@@ -7,7 +7,14 @@
 #To disable, run 'sudo systemctl disable cave'
 
 pushd ~/capstone/src/script
-pwd
+#install Docker packages
+if dpkg -s docker &> /dev/null; then
+    echo "Docker already installed"
+else
+    curl -sSL https://get.docker.com | sh
+fi
+
+#install Python packages
 sudo apt-get -y --ignore-missing install $(< packages.txt)
 sudo systemctl start docker
 sudo systemctl enable docker

@@ -8,9 +8,8 @@ Nicholas Trimble, 25/02/2026
 open("/home/mscp/run.txt", "w") #indicate script has run
 import os
 import time
-import subprocess
 import gpiozero as GPIO
-import docker
+import subprocess
 
 #hardware constants
 GPIO_RECORD_TOGGLE = 17     #Button 1 aka U6 - LED U7 linked via hardware
@@ -89,7 +88,9 @@ while C_SHUTDOWN == False:
     if C_START_STOP == True and C_START_STOP_D == False:
         # start the docker container for recording
         try:
-            subprocess.run(["docker", "compose", "up", "-d", "tof"], cwd="/home/mscp/capstone/src", check=True)
+            #subprocess.run(["sudo", "docker", "compose", "up"],
+            #                cwd="/home/mscp/capstone/src",
+            #                check=True)
             print("Started TOF recording container")
             led_record_status.on()
         except subprocess.CalledProcessError as e:
@@ -102,7 +103,9 @@ while C_SHUTDOWN == False:
         led_record_status.off()
         # stop the docker container
         try:
-            subprocess.run(["docker", "compose", "down"], cwd="/home/mscp/capstone/src", check=True)
+            #subprocess.run(["sudo", "docker", "compose", "down"],
+            #                cwd="/home/mscp/capstone/src",
+            #                check=True)
             print("Stopped recording container")
         except subprocess.CalledProcessError as e:
             print(f"Failed to stop container: {e}")
