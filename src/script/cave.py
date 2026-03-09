@@ -17,7 +17,7 @@ GPIO_RECORD_TOGGLE = 17     #Button 1 aka U6 - LED U7 linked via hardware
 GPIO_SHUTDOWN      = 4      #Button 2 aka U8 - LED U9 linked via hardware
 GPIO_RECORD_STATUS = 23     #Sensing aka U10
 GPIO_RECORD_ERROR  = 24     #Sensing Error aka LED1
-GPIO_STORAGE_IND   = 27     #Battery Low aka LED2
+GPIO_STORAGE_IND   = 27     #Battery Low aka LED2               #this may not be working?
 
 #system constants
 C_START_STOP = False        #true=running, false=not running
@@ -25,7 +25,7 @@ C_START_STOP_D = False      #previous state to detect change- this is very state
 C_SHUTDOWN = False          #True indicates the Pi will shut down on the next cycle
 C_STORAGE_THRES = 0.8       #fractional occupied space where warning begins
 C_DEBOUNCE = 20             #Button debouncing time, in ms
-C_LOOP_TIME = 0.2           #Loop delay, seconds
+C_LOOP_TIME = 0.1           #Loop delay, seconds
 
 #-#-# functions #-#-#
 
@@ -78,26 +78,27 @@ but_record_toggle.when_pressed = rec_toggle_isr
 
 print("Begin process")
 while C_SHUTDOWN == False:
-    #set past state a la 'shift register'
-    C_START_STOP_D = C_START_STOP
+    #print(f"Past: {C_START_STOP_D}, Present: {C_START_STOP}")
 
     #check storage
     if check_capacity() == True:
-        led_storage_ind.on()
+        led_record_error.on() #temporary
+        led_storage_ind.on() #check wiring, this LED isnt turning on
 
-    #'Rising edge', being recording
+    #'Rising edge', begin recording
     if C_START_STOP == True and C_START_STOP_D == False:
-        led_record_status.on()
         # start the docker container for recording
         try:
             subprocess.run(["docker", "compose", "up", "-d", "tof"], cwd="/home/mscp/capstone/src", check=True)
             print("Started TOF recording container")
+            led_record_status.on()
         except subprocess.CalledProcessError as e:
             print(f"Failed to start container: {e}")
             led_record_error.on()
 
     #'Falling edge', stop recording
     elif C_START_STOP == False and C_START_STOP_D == True:
+        led_record_error.off() #turn off leds, no longer trying to record
         led_record_status.off()
         # stop the docker container
         try:
@@ -105,8 +106,10 @@ while C_SHUTDOWN == False:
             print("Stopped recording container")
         except subprocess.CalledProcessError as e:
             print(f"Failed to stop container: {e}")
-            led_record_error.on()
         os.sync()
+
+    #update state
+    C_START_STOP_D = C_START_STOP
 
     #loop delay
     time.sleep(C_LOOP_TIME)
