@@ -5,7 +5,6 @@ mainly starting and stopping the capture process in ROS.
 Nicholas Trimble, 25/02/2026
 """
 
-open("/home/mscp/run.txt", "w") #indicate script has run
 import os
 import time
 import gpiozero as GPIO
@@ -25,6 +24,9 @@ C_SHUTDOWN = False          #True indicates the Pi will shut down on the next cy
 C_STORAGE_THRES = 0.8       #fractional occupied space where warning begins
 C_DEBOUNCE = 20             #Button debouncing time, in ms
 C_LOOP_TIME = 0.1           #Loop delay, seconds
+C_WORKDIR   = "/etc/cave/src" #location of sources
+C_DOCKER = ["sudo", "docker", "compose", "-f", f"{C_WORKDIR}/record-compose.yml"]
+
 
 #-#-# functions #-#-#
 
@@ -88,8 +90,8 @@ while C_SHUTDOWN == False:
     if C_START_STOP == True and C_START_STOP_D == False:
         # start the docker container for recording
         try:
-            subprocess.run(["sudo", "docker", "compose", "-f", "record-compose.yml", "up"],
-                            cwd="/home/mscp/capstone/src",
+            subprocess.run(C_DOCKER.append("up"),   #TODO: detach properly so it can be brought down, LEDs activate
+                            cwd=C_WORKDIR,
                             check=True)
             print("Started TOF recording container")
             led_record_status.on()
@@ -103,8 +105,8 @@ while C_SHUTDOWN == False:
         led_record_status.off()
         # stop the docker container
         try:
-            subprocess.run(["sudo", "docker", "compose", "-f", "record-compose.yml", "down"],
-                            cwd="/home/mscp/capstone/src",
+            subprocess.run(C_DOCKER.append("down"),
+                            cwd=C_WORKDIR,
                             check=True)
             print("Stopped recording container")
         except subprocess.CalledProcessError as e:
@@ -118,6 +120,7 @@ while C_SHUTDOWN == False:
     time.sleep(C_LOOP_TIME)
 
 #loop broken, time to shut down!
+#TODO: shut down Docker container here as well
 os.sync()
 for s in range(5,0,-1):
     print(s)
