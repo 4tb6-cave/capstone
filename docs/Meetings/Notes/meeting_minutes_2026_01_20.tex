@@ -1,0 +1,49 @@
+% Meeting 18
+	\pagebreak
+	\section*{Jan. 20, 2025}
+	\addcontentsline{toc}{section}{Meeting 18}
+
+	\textbf{C.A.V.E Attendees:} Abdul, Tabish, Berk, Andrew, Nicholas, Dr. Giamou\\
+	\textbf{Notetaker:} Nicholas
+
+	\subsection*{Meeting with Dr. Giamou}
+		\subsubsection*{Agenda}
+			\begin{itemize}
+				\item Rev0 deliverable
+			\end{itemize}
+
+		\subsubsection*{Minutes}
+			\begin{itemize}
+				\item Challenges getting software to work with IMU
+				\item switched to ICP with just TOFs, some drift over longer captures
+				\item gets transformation matrices, multiply together for final
+				\item Forms some shapes using only one TOF
+				\item Not expecting high fidelity with these Sensors
+				\item Want to measure a loop to see that drift is minimal, loop closure in SLAM
+				\item Have a good point cloud created from slow capture of desk
+				\item Got ros1 version from paper running, need to convert bags from ros2 to ros1 formats
+				\item Berk outputs a spreadsheet of pose estimation, couldnt get imu and TOF working together on Pi- versionitis
+				\item position estimation by integration, next challenge is putting them together
+				\item IMU needs to be calibrated- preexisting calib from mfgr
+				\item Longer term- for dense point clouds, techniques to assume envs are smooth, optimize a score (Renyi entropy) to find corrections that make the point clouds tighter from poses 
+				\item Expensive but works for offline processing like ours
+				\item rev1 consideration mainly
+				\item Versionitis on the pi with ubuntu 24
+				\item Using imu to estimate pose before ICP may not be needed
+				\item Complementary filter recommended to estimate angular velocities for state estimate
+				\item TOF time sync, plus IMU: can maybe sample IMU fast enough to mostly align with TOF, TICSync possible method for the 2 TOF
+				\item TICSync guesses the difference in time between sensor captures- offset between clocks/events from each sensor
+				\item or use earlier TOF capt and IMU data, then forward interpolate with later TOF capt to improve estimation
+				\item Mechanical stuff- have TOF holder printed, need some inserts and screws
+				\item Good elastic strength on the clip mechanism
+				\item 
+			\end{itemize}
+
+		\subsubsection*{Action Items}
+			\begin{itemize}
+				\item Work on capturing larger spaces with the single sensor
+				\item Attempt to fuse IMU with TOF
+				\item Plan for presentation
+			\end{itemize}
+
+

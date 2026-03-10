@@ -277,3 +277,13 @@ TSWLatexianTemp*
 
 # DS_Store file from Mac computers
 .DS_Store
+
+.vscode
+
+# Build folders
+src/**/build/
+src/**/log/
+src/**/install/
+
+# Ignore ros bags
+bag

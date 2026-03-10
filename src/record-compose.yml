@@ -1,0 +1,38 @@
+
+# This file contains all of the services which will run on the pi when recording
+
+# TODO: 
+services:
+  base:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: base
+    # Interactive shell
+    stdin_open: true
+    tty: true
+    # Networking and IPC for ROS 2
+    network_mode: host
+    ipc: host
+    volumes:
+      # Allow usb
+      - /dev:/dev
+    device_cgroup_rules:
+      - 'c *:* rmw'
+
+  tof:
+    extends: base
+    volumes:
+      - ./record:/record
+    command: 'ros2 run sipeed_tof_ms_a010 publisher --ros-args -p device:="/dev/ttyUSB0"'
+
+  imu_bno085:
+    extends: base
+    command: 'ros2 launch bno08x_driver bno085_i2c.launch.py'
+
+  record:
+    extends: base
+    volumes:
+      - ./../bag:/bag # save in capstone root directory
+    working_dir: /bag
+    command: 'ros2 bag record cloud_one depth_one imu magnetic_field'
