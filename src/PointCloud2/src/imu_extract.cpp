@@ -44,6 +44,7 @@ int main (int argc, char** argv) {
     std::size_t imu_id = 0;
 
     rclcpp::Serialization<sensor_msgs::msg::Imu> imu_ser;
+	double t_last = 0;
 
     while(reader.has_next()){
         auto bag_msg = reader.read_next();
@@ -55,6 +56,10 @@ int main (int argc, char** argv) {
 
             double t = timeStampToSec(imu_msg.header.stamp);
 
+			if (t < t_last)
+				std::cout << std::fixed << std::setprecision(9) << "out of order! t=" << t << ", t_last=" << t_last << std::endl;
+			
+			t_last = t;
 
             imu_file << t << "," << imu_msg.orientation.x << "," << imu_msg.orientation.y << "," << imu_msg.orientation.z << "," << imu_msg.orientation.w << ","
                 << imu_msg.angular_velocity.x << "," << imu_msg.angular_velocity.y << "," << imu_msg.angular_velocity.z << ","

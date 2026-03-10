@@ -9,6 +9,8 @@
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/inference/Key.h>
 #include <gtsam/slam/BetweenFactor.h>
+#include <gtsam/slam/PoseRotationPrior.h>
+#include <gtsam/slam/PoseTranslationPrior.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/GaussNewtonOptimizer.h>
 #include <gtsam/nonlinear/Marginals.h>
@@ -264,6 +266,84 @@ bool imu_preintegration(NonlinearFactorGraph &graph, std::string imu_filename,
 	return true;
 }
 
+// Add IMU to factor graph using precomputed orientation
+bool imu_rotation_prior(NonlinearFactorGraph &graph, std::string imu_filename,
+						std::vector<double> frame_time, int first_frame, int last_frame)
+{
+	std::ifstream file(imu_filename);
+	if (!file.is_open())
+	{
+		std::cerr << "Failed to open " << imu_filename << std::endl;
+		return false;
+	}
+
+	auto rot_noise_model = noiseModel::Isotropic::Sigma(3, 0.01); // TODO determine value
+
+	std::string line;
+	int row = 0;
+	const int num_cols = 11;
+	double values[num_cols]; // time,o_x,o_y,o_z,o_w,av_x,av_y,av_z,la_x,la_y,la_z
+
+	double cur_time, prev_time;
+	Eigen::Quaterniond q, prev_q;
+	bool prev_imu_flag = false;
+
+	int frame = first_frame;
+
+	std::getline(file, line); // discard first line
+
+	while (std::getline(file, line) && frame <= last_frame)
+	{
+		// Read IMU data
+		std::stringstream ss(line);
+		std::string value;
+		int col = 0;
+		while (std::getline(ss, value, ',') && col < num_cols)
+		{
+			values[col] = std::stod(value);
+			col++;
+		}
+		q = Eigen::Quaterniond(values[4], values[1], values[2], values[3]);
+		cur_time = values[0];
+
+		if (values[0] > frame_time[frame])
+		{
+			if (prev_imu_flag)
+			{
+				float t = (frame_time[frame] - prev_time) / (cur_time - prev_time); // interpolation factor
+				prev_q.normalize();
+				q.normalize(); //ensure both are normalized
+				Eigen::Quaterniond q_new = prev_q.slerp(t, q);
+				// std::cout << "Interpolated q for frame " << frame << " time " << std::fixed << std::setprecision(3) << 
+				// 	frame_time[frame] << ": " << q_new << std::endl;
+
+				// add factor into graph
+				PoseRotationPrior<Pose3> rot_factor(X(frame), Rot3(q_new), rot_noise_model);
+				graph.add(rot_factor);
+
+				frame++;
+			}
+			else
+			{
+				// IMU must have started after ToF, we need to skip ToF frames until they match up again
+				while (values[0] > frame_time[frame])
+					frame++;
+				prev_imu_flag = true;
+			}
+		}
+		else
+		{
+			// imu measurement before frame
+			prev_imu_flag = true;
+		}
+
+		prev_q = q;
+		prev_time = cur_time;
+	}
+
+	return true;
+}
+
 int main(int argc, char **argv)
 {
 	CLI::App app{"GTSAM sensor fusion using ICP results and IMU"};
@@ -272,6 +352,7 @@ int main(int argc, char **argv)
 	int starting_frame = 0;
 	int ending_frame = 0;
 	bool enable_preintegration = false;
+	bool enable_rotation_prior = false;
 
 	app.add_option("data_dir", data_dir, "Directory which contains input data and where results will be stored")
 		->check(CLI::ExistingDirectory)->required();
@@ -280,6 +361,8 @@ int main(int argc, char **argv)
 	app.add_option("-e,--end", ending_frame, "Ending frame number")
 		->required();
 	app.add_flag("--enable_imu_preint", enable_preintegration, "Enable IMU preintegration")
+		->default_val(false);
+	app.add_flag("--enable_imu_rot", enable_rotation_prior, "Enable IMU rotation prior from precomputed quaternions")
 		->default_val(false);
 
 	CLI11_PARSE(app, argc, argv);
@@ -304,8 +387,17 @@ int main(int argc, char **argv)
 
 	// Add a prior on the first pose, setting it to the origin
 	// A prior factor consists of a mean and a noise model (covariance matrix)
-	noiseModel::Diagonal::shared_ptr priorNoise = noiseModel::Diagonal::Sigmas(Vector6(0.001, 0.001, 0.001, 0.001, 0.001, 0.001)); // TODO what values?
-	graph.addPrior(X(starting_frame), Pose3(Rot3::Identity(), Point3(0, 0, 0)), priorNoise);
+	if (enable_rotation_prior)
+	{
+		// only constrain translation, because we have a prior for rotation elsewhere
+		noiseModel::Diagonal::shared_ptr priorNoise = noiseModel::Diagonal::Sigmas(Vector3(0.001, 0.001, 0.001)); // TODO what values?
+		graph.add(PoseTranslationPrior<Pose3>(X(starting_frame), Pose3(Rot3::Identity(), Point3(0, 0, 0)), priorNoise));
+	}
+	else
+	{
+		noiseModel::Diagonal::shared_ptr priorNoise = noiseModel::Diagonal::Sigmas(Vector6(0.001, 0.001, 0.001, 0.001, 0.001, 0.001)); // TODO what values?
+		graph.addPrior(X(starting_frame), Pose3(Rot3::Identity(), Point3(0, 0, 0)), priorNoise);
+	}
 
 	// TODO: We really need a covariance matrix for each ICP result! this is just a wild guess
 	noiseModel::Diagonal::shared_ptr model = noiseModel::Diagonal::Sigmas(Vector6(0.001, 0.001, 0.001, 0.001, 0.001, 0.001));
@@ -344,6 +436,9 @@ int main(int argc, char **argv)
 	// Add IMU preintegration factors
 	if (enable_preintegration)
 		imu_preintegration(graph, imu_filename, frame_timestamps, starting_frame, ending_frame);
+
+	if (enable_rotation_prior)
+		imu_rotation_prior(graph, imu_filename, frame_timestamps, starting_frame, ending_frame);
 
 	graph.print("\nFactor Graph:\n"); // print complete graph
 

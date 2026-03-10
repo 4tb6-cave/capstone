@@ -43,6 +43,11 @@ Example of how I do this currently:
 colcon build
 
 ./build/point_cloud2/imu_extract bag/rosbag2_2026_03_03-02_10_08/ results
+
+# make sure imu is sorted by message timestamp (ros bag may have received messages out of order)
+cd results
+{ head -n 1 imu.csv; tail -n +2 imu.csv | sort -t, -k1,1g; } > tmp && mv tmp imu.csv
+
 ./build/point_cloud2/point_cloud_extract bag/rosbag2_2026_03_03-02_10_08/ results --topic /cloud_one
 
 # inspect point clouds and choose starting and ending frame
