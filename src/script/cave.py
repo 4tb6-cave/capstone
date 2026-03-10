@@ -88,9 +88,9 @@ while C_SHUTDOWN == False:
     if C_START_STOP == True and C_START_STOP_D == False:
         # start the docker container for recording
         try:
-            #subprocess.run(["sudo", "docker", "compose", "up"],
-            #                cwd="/home/mscp/capstone/src",
-            #                check=True)
+            subprocess.run(["sudo", "docker", "compose", "-f", "record-compose.yml", "up"],
+                            cwd="/home/mscp/capstone/src",
+                            check=True)
             print("Started TOF recording container")
             led_record_status.on()
         except subprocess.CalledProcessError as e:
@@ -103,9 +103,9 @@ while C_SHUTDOWN == False:
         led_record_status.off()
         # stop the docker container
         try:
-            #subprocess.run(["sudo", "docker", "compose", "down"],
-            #                cwd="/home/mscp/capstone/src",
-            #                check=True)
+            subprocess.run(["sudo", "docker", "compose", "-f", "record-compose.yml", "down"],
+                            cwd="/home/mscp/capstone/src",
+                            check=True)
             print("Stopped recording container")
         except subprocess.CalledProcessError as e:
             print(f"Failed to stop container: {e}")

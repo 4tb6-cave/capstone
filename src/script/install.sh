@@ -35,7 +35,8 @@ popd
 #docker compose build to create containers- as long as its persistent between boots
 #rerun whenever code updated
 pushd ~/capstone/src
-docker build -t cave -f docker/Dockerfile . #downloads Docker packages
+#docker build -t cave -f docker/Dockerfile . #downloads Docker packages
+docker compose -f record-compose.yml build
 popd
 
 echo 'Installation complete!'
