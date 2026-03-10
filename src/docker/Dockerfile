@@ -25,7 +25,7 @@ COPY ./bno08x_ros2_driver ./src/bno08x_ros2_driver
 #RUN . /opt/ros/humble/setup.sh && \
 #    colcon build --packages-select berk
 
-RUN . /opt/ros/humble/setup.sh && colcon build
+RUN . /opt/ros/humble/setup.sh &&	colcon build --parallel-workers $(nproc)
 
 COPY ./docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
