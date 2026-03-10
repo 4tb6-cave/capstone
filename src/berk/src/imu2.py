@@ -61,6 +61,7 @@ def record_sample(f):
         "linear_acceleration": list(sensor.linear_acceleration),
         "gravity": list(sensor.gravity)
     }
+    assert data["temperature"] != 0
     json.dump(data, f)
     f.write('\n')
     f.flush()

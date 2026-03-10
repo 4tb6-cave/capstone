@@ -21,7 +21,7 @@ services:
     extends: base
     volumes:
       - ./record:/record
-    command: 'ros2 run sipeed_tof_ms_a010 publisher --ros-args -p device:="/dev/ttyUSB0"'
+    command: 'ros2 run sipeed_tof_ms_a010 publisher --ros-args -p device:="/dev/ttyS0"'
 
 #  imu_bno085:
 #    extends: base

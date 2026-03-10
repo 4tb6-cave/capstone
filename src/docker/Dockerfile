@@ -23,8 +23,10 @@ COPY ./sipeed_tof_ms_a010 ./src/sipeed_tof_ms_a010
 #RUN . /opt/ros/humble/setup.sh && \
 #    colcon build --packages-select berk
 
+#ENV CMAKE_BUILD_PARALLEL_LEVEL=$(nproc)
+
 RUN . /opt/ros/humble/setup.sh && \
-	colcon build
+	colcon build --parallel-workers $(nproc)
 
 COPY ./docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

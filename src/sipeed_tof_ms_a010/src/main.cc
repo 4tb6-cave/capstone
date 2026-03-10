@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <sstream>        // Added for stringstream
 #include <opencv2/opencv.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -17,6 +18,8 @@
 
 // Add this include for file stream operations
 #include <fstream>
+// Add this include for hex printing helper
+#include <cstdio>
 
 #include "cJSON.h"
 #include "frame_struct.h"
@@ -26,145 +29,214 @@ extern frame_t *handle_process(std::string s);
 
 using namespace std::chrono_literals;
 
+// Helper function to print string content as hex bytes with spaces
+void printHex(const std::string& str) {
+    for (unsigned char c : str) {
+        printf("%02X ", c);
+    }
+}
+
 class SipeedTOF_MSA010_Publisher : public rclcpp::Node {
-#define ser (*pser)
  private:
   Serial *pser;
   float uvf_parms[4];
 
 public:
   SipeedTOF_MSA010_Publisher() : Node("sipeed_tof_ms_a010") {
-    std::string s;
-    this->declare_parameter("device", "/dev/ttyUSB0");
-    this->declare_parameter("output_topic_num", "one");
-    rclcpp::Parameter device_param = this->get_parameter("device");
-    rclcpp::Parameter output_topic_num_param =
-        this->get_parameter("output_topic_num");
+      std::string s;
+      this->declare_parameter("device", "/dev/ttyS0");
+      this->declare_parameter("output_topic_num", "one");
+      rclcpp::Parameter device_param = this->get_parameter("device");
+      rclcpp::Parameter output_topic_num_param = this->get_parameter("output_topic_num");
 
-    std::cout << "Device Param: " << device_param.as_string() << std::endl;
-    std::cout << "Output Topic Param: " << output_topic_num_param.as_string() << std::endl;
+      std::cout << "Device Param: " << device_param.as_string() << std::endl;
+      std::cout << "Output Topic Param: " << output_topic_num_param.as_string() << std::endl;
 
-    std::string output_pointcloud_topic = "cloud_" + output_topic_num_param.as_string();
-    std::string output_depth_topic = "depth_" + output_topic_num_param.as_string();
-    output_frame_id = "tof_" + output_topic_num_param.as_string();
-    s = device_param.as_string();
-    std::cout << "use device: " << s << std::endl;
-    pser = new Serial(s);
+      std::string output_pointcloud_topic = "cloud_" + output_topic_num_param.as_string();
+      std::string output_depth_topic = "depth_" + output_topic_num_param.as_string();
+      output_frame_id = "tof_" + output_topic_num_param.as_string();
 
-    int attempts_counter = 0;
+      s = device_param.as_string();
+      std::cout << "use device: " << s << std::endl;
+      pser = new Serial(s);
 
-    // reboot the device's serial port
-    ser  << "AT+DISP=1\r";
-    while (s.compare("OK\r\n")) {
-      attempts_counter++;
-      std::cout << "Error on rebooting device, attempt " << attempts_counter << std::endl;
-      std::cout << "Error: " << s << std::endl;
-      ser  << "AT+DISP=1\r";
-      ser >> s;
-      if (attempts_counter > 15) {
-        std::cout << "Max Reboot Attempts Reached, Terminating..." << std::endl;
+      auto run_tof_cmd = [&](const std::string& cmd, const std::string& search_str = "", int max_retries = 15) -> bool {
+        s.clear();
+
+        for (int attempts_counter = 0; attempts_counter < max_retries; attempts_counter++) {
+          // Send command only on every other attempt (0, 2, 4...)
+          if (!cmd.empty() && attempts_counter % 2 == 0) {
+              std::cout << "sending command: " << cmd << std::endl;
+              *pser << cmd;
+              std::this_thread::sleep_for(std::chrono::milliseconds(50));
+          }
+
+          if (search_str.empty()) return true;
+
+          *pser >> s;
+
+          std::cout << "(Attempt " << attempts_counter << "/" << max_retries << ")" << std::endl;
+          // std::cout << "Raw Response: " << s << ", in hex: ";
+          // printHex(s);
+          // std::cout << std::endl;
+
+          if (s.find(search_str) != std::string::npos) {
+              return true;
+          }
+
+          std::cout << "Error checking response for: " << cmd << std::endl;
+          std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+
+        return false;
+      };
+
+
+      // --- Initialization Sequence ---
+
+      // Reboot device serial port
+      std::cout << "Rebooting tof sensor..." << std::endl;
+      if (!run_tof_cmd("AT+DISP=1\r", "OK")) {
+          RCLCPP_ERROR(this->get_logger(), "Failed to reboot device");
+          return; // Exit constructor early on failure (if safe) or throw exception
+      }
+      std::cout << "Rebooted tof machine successfully" << std::endl;
+
+      // Check device connectivity
+      std::cout << "Checking device connection..." << std::endl;
+      if (!run_tof_cmd("AT\r", "OK")) {
+          RCLCPP_ERROR(this->get_logger(), "Failed to check device");
+          return;
+      }
+
+
+      coeff_retry:
+      pser->clearBuffer();  // Clear any previous data
+      run_tof_cmd("AT+COEFF?\r");
+      // Get Coefficients - use buffered read instead of retry loop
+      std::cout << "Getting coefficients..." << std::endl;
+      if (!pser->readUntilComplete(s, 2000)) {  // 1 second timeout for full JSON
+          RCLCPP_ERROR(this->get_logger(), "Failed to get coefficient (timeout)");
+          return;
+      }
+
+      std::cout << "Coefficients received:" << s << std::endl;
+
+      auto coeffs = s;
+
+      //Verify OK response follows
+      // if (!run_tof_cmd("", "OK\n", 5)) {
+      if (!run_tof_cmd("AT\r", "OK", 3)) {
+          RCLCPP_WARN(this->get_logger(), "Expected OK not found after COEFF query, retrying...");
+          goto coeff_retry;
+      }
+
+      std::cout << "coeff check passed" << std::endl;
+
+      if (coeffs.length() > 0) {
+          cJSON *cparms = cJSON_ParseWithLength((const char *)coeffs.c_str(), coeffs.length());
+          if (!cparms) {
+              RCLCPP_ERROR(this->get_logger(), "Failed to parse coefficient JSON");
+              return;
+          }
+
+          uvf_parms[0] = ((float)((cJSON_GetObjectItem(cparms, "fx")->valueint) / 262144.0f));
+          uvf_parms[1] = ((float)((cJSON_GetObjectItem(cparms, "fy")->valueint) / 262144.0f));
+          uvf_parms[2] = ((float)((cJSON_GetObjectItem(cparms, "u0")->valueint) / 262144.0f));
+          uvf_parms[3] = ((float)((cJSON_GetObjectItem(cparms, "v0")->valueint) / 262144.0f));
+
+          cJSON_Delete(cparms); // Clean up cJSON object
+      } else {
+          RCLCPP_ERROR(this->get_logger(), "Coefficient string is empty");
+      }
+
+      std::cout << "fx: " << uvf_parms[0] << std::endl;
+      std::cout << "fy: " << uvf_parms[1] << std::endl;
+      std::cout << "u0: " << uvf_parms[2] << std::endl;
+      std::cout << "v0: " << uvf_parms[3] << std::endl;
+
+      // set quant
+      if (!run_tof_cmd("AT+UNIT=5\r", "OK")) {
+          RCLCPP_WARN(this->get_logger(), "Failed to set unit");
+          return;
+      }
+
+      if (!run_tof_cmd("AT+FPS=7\r", "OK")) {
+          RCLCPP_WARN(this->get_logger(), "Failed to set FPS");
+          return;
+      }
+
+      std::cout << "Increasing baud rate..." << std::endl;
+
+      *pser << "AT+BAUD=5\r"; // 5 is 921600
+
+      int baud = 921600;
+      if (pser->setBaudrate(baud)) {
+        RCLCPP_INFO(this->get_logger(), "Host baudrate updated to %d", baud);
+      }
+      else
+      {
+        RCLCPP_ERROR(this->get_logger(), "Failed to set host baudrate!");
         return;
       }
-    }
+
+      *pser >> s;
+      s.clear(); // clear s since we miss the last message (or just read garbage)
 
 
-    ser << "AT\r";
-    ser >> s;
-    while (s.compare("OK\r\n")) {
-      attempts_counter++;
-      std::cout << "Error on checking device" << std::endl;
-      std::cout << "Error: " << s << std::endl;
-      ser >> s;
-      if (attempts_counter > 15) {
-        std::cout << "Max Attempts Reached, Terminating..." << std::endl;
-        return;
+      if (!run_tof_cmd("AT+DISP=4\r", "OK")) { // mfw hours wasted because i did not tell the sensor to output point clouds on uart
+          RCLCPP_WARN(this->get_logger(), "Failed to enable UART");
+          return;
       }
-    }
 
-    ser << "AT+COEFF?\r";
-    ser >> s;
-    while (s.find("+COEFF=1\r\nOK\r\n") == std::string::npos) {
-      attempts_counter++;
-      // not this serial port
-      std::cout << "Error checking coefficient" << std::endl;
-      std::cout << "Error: " << s << std::endl;
-      ser << "AT+COEFF?\r";
-      ser >> s;
-      if (attempts_counter > 15) {
-        std::cout << "Max Attempts Reached, Terminating..." << std::endl;
-        return;
-      }
-    }
+      /* do not delete it. It is waiting */
+      *pser >> s;
+      std::cout << "Raw received (" << s.length() << " bytes): ";
+      printHex(s);
+      std::cout << std::endl;
 
-    s = s.substr(14, s.length() - 14);
-    if (s.length() == 0) {
-      ser >> s;
-    }
-    //std::cout << s << std::endl;
-    cJSON *cparms = cJSON_ParseWithLength((const char *)s.c_str(), s.length());
-    uvf_parms[0] =
-        ((float)((cJSON_GetObjectItem(cparms, "fx")->valueint) / 262144.0f));
-    uvf_parms[1] =
-        ((float)((cJSON_GetObjectItem(cparms, "fy")->valueint) / 262144.0f));
-    uvf_parms[2] =
-        ((float)((cJSON_GetObjectItem(cparms, "u0")->valueint) / 262144.0f));
-    uvf_parms[3] =
-        ((float)((cJSON_GetObjectItem(cparms, "v0")->valueint) / 262144.0f));
-    std::cout << "fx: " << uvf_parms[0] << std::endl;
-    std::cout << "fy: " << uvf_parms[1] << std::endl;
-    std::cout << "u0: " << uvf_parms[2] << std::endl;
-    std::cout << "v0: " << uvf_parms[3] << std::endl;
+      // --- Setup Publishers & Timer ---
+      publisher_depth = this->create_publisher<sensor_msgs::msg::Image>(output_depth_topic, 10);
+      publisher_pointcloud = this->create_publisher<sensor_msgs::msg::PointCloud2>(output_pointcloud_topic, 10);
+      timer_ = this->create_wall_timer(30ms, std::bind(&SipeedTOF_MSA010_Publisher::timer_callback, this));
 
-    /* do not delete it. It is waiting */
-    ser >> s;
-    std::cout << "coefficient check" << std::endl;
-    std::cout << s << std::endl;
-    ser << "AT+DISP=3\r"; // 0 for off, 3 for on
-    ser >> s;
-    if (s.compare("OK\r\n")) {
-      // not this serial port
-      return;
-    }
-    ser << "AT+UNIT=5\r"; // set unit to 5
-
-    publisher_depth =
-        this->create_publisher<sensor_msgs::msg::Image>(output_depth_topic, 10);
-    publisher_pointcloud =
-        this->create_publisher<sensor_msgs::msg::PointCloud2>(output_pointcloud_topic, 10);
-    timer_ = this->create_wall_timer(
-        30ms, std::bind(&SipeedTOF_MSA010_Publisher::timer_callback, this));
+      fps_check_timer_ = this->create_wall_timer(1s, std::bind(&SipeedTOF_MSA010_Publisher::check_fps, this));
   }
 
-  ~SipeedTOF_MSA010_Publisher() {}
+
+  ~SipeedTOF_MSA010_Publisher() {
+      if (pser) {
+          delete pser;
+      }
+  }
 
 private:
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_depth;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-      publisher_pointcloud;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_pointcloud;
   std::string output_frame_id;
 
-  static void send_imu_trigger()
-  {
+  // FPS tracking variables
+  std::deque<double> recent_frame_times;
+  const int max_frames_to_track = 20;
+  rclcpp::TimerBase::SharedPtr fps_check_timer_;
+  double last_fps_print_time = 0.0;
+
+  // Helper to send IMU trigger via Unix Socket
+  static void send_imu_trigger() {
       const char *socket_path = "/record/imu_trigger";
       int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-      if (sockfd == -1) {
-          // In a real system you might log this, but for brevity we ignore errors.
-          return;
-      }
+      if (sockfd == -1) return;
 
       struct sockaddr_un addr{};
       addr.sun_family = AF_UNIX;
       strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path)-1);
 
-      if (connect(sockfd, reinterpret_cast<struct sockaddr *>(&addr),
-                  sizeof(addr)) == -1) {
+      if (connect(sockfd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) == -1) {
           close(sockfd);
           return;
       }
 
-      // Send any non‑empty message – the IMU daemon just cares that
-      // something arrives.  A newline makes it easier to read with netcat.
       const char *msg = "trigger\n";
       write(sockfd, msg, strlen(msg));
 
@@ -172,78 +244,147 @@ private:
   }
 
   void timer_callback() {
-    send_imu_trigger();
     std::string s;
     std::stringstream sstream;
-    frame_t *f;
-  _more:
-    ser >> s;
-    if (s.empty()) {
-      return;
+    frame_t *f = nullptr;
+    int consecutive_empty = 0;
+    const int max_consecutive_empty = 10;
+
+    // Clear buffer before reading to ensure clean state
+    pser->clearBuffer();
+
+    while (true) {
+        // Read from serial with timeout
+        *pser >> s;
+
+        if (s.empty()) {
+            consecutive_empty++;
+
+            // If we've had too many empty reads, sensor may be unresponsive
+            if (consecutive_empty > max_consecutive_empty) {
+                RCLCPP_WARN(this->get_logger(), "ToF sensor not responding after %d attempts",
+                          consecutive_empty);
+                consecutive_empty = 0;
+                return;  // Exit and try next timer cycle
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;  // Try again
+        }
+
+        consecutive_empty = 0;
+        break;  // Got valid data, proceed with processing
     }
+
+    // Debug: Print raw response
+    // std::cout << "Raw received (" << s.length() << " bytes): ";
+    // printHex(s);
+    // std::cout << std::endl;
+
+    // Process the frame data
     f = handle_process(s);
     if (!f) {
-      goto _more;
+        // RCLCPP_WARN(this->get_logger(), "Failed to process frame, retrying...");
+        return;  // Invalid frame, skip this cycle
     }
-    // cout << f << endl;
+    send_imu_trigger(); // to make it even more accurate, call it as soon as frame is validated but before handle_process parses the entire string
+
     uint8_t rows, cols, *depth;
     rows = f->frame_head.resolution_rows;
     cols = f->frame_head.resolution_cols;
     depth = f->payload;
-    cv::Mat md(rows, cols, CV_8UC1, depth);
 
+    cv::Mat md(rows, cols, CV_8UC1, depth);
     sstream << md.size();
 
     std_msgs::msg::Header header;
     header.stamp = this->get_clock()->now();
-    // output_frame_id = "tof_one";
     header.frame_id = output_frame_id;
 
     sensor_msgs::msg::Image msg_depth =
         *cv_bridge::CvImage(header, "mono8", md).toImageMsg().get();
-    RCLCPP_INFO(this->get_logger(), "Publishing: depth:%s",
-                sstream.str().c_str());
+
+    // RCLCPP_INFO(this->get_logger(), "Publishing: depth:%s", sstream.str().c_str());
     publisher_depth->publish(msg_depth);
+
+    // RCLCPP_INFO(this->get_logger(), "Processing frame: rows=%d, cols=%d", (int)rows, (int)cols);
 
     sensor_msgs::msg::PointCloud2 pcmsg;
     pcmsg.header = header;
     pcmsg.height = rows;
     pcmsg.width = cols;
     pcmsg.is_bigendian = false;
-    pcmsg.point_step = 16;
+    pcmsg.point_step = 16; // x, y, z (float), rgb (uint32)
     pcmsg.row_step = pcmsg.point_step * rows;
     pcmsg.is_dense = false;
-    pcmsg.fields.resize(pcmsg.point_step / 4);
-    pcmsg.fields[0].name = "x";
-    pcmsg.fields[0].offset = 0;
-    pcmsg.fields[0].datatype = sensor_msgs::msg::PointField::FLOAT32;
-    pcmsg.fields[0].count = 1;
-    pcmsg.fields[1].name = "y";
-    pcmsg.fields[1].offset = 4;
-    pcmsg.fields[1].datatype = sensor_msgs::msg::PointField::FLOAT32;
-    pcmsg.fields[1].count = 1;
-    pcmsg.fields[2].name = "z";
-    pcmsg.fields[2].offset = 8;
-    pcmsg.fields[2].datatype = sensor_msgs::msg::PointField::FLOAT32;
-    pcmsg.fields[2].count = 1;
-    pcmsg.fields[3].name = "rgb";
-    pcmsg.fields[3].offset = 12;
-    pcmsg.fields[3].datatype = sensor_msgs::msg::PointField::UINT32;
-    pcmsg.fields[3].count = 1;
 
+    // Calculate expected data size for logging
+    size_t expected_data_size = static_cast<size_t>(rows) * cols * pcmsg.point_step;
+    // RCLCPP_INFO(this->get_logger(), "Allocating point cloud buffer: %zu bytes", expected_data_size);
+
+    pcmsg.data.resize(expected_data_size, 0x00);
+
+    // Safety Check: Ensure data allocation succeeded (rare but possible on low memory)
+    if (pcmsg.data.size() != expected_data_size) {
+        RCLCPP_ERROR(this->get_logger(), "Point cloud buffer resize failed. Expected %zu got %zu",
+                     expected_data_size, pcmsg.data.size());
+        free(f);
+        return;
+    }
+
+    uint8_t *ptr = pcmsg.data.data();
+
+    // Check calibration parameters to avoid division by zero (NaN/Inf)
     float fox = uvf_parms[0];
     float foy = uvf_parms[1];
     float u0 = uvf_parms[2];
     float v0 = uvf_parms[3];
 
-    pcmsg.data.resize((pcmsg.height) * (pcmsg.width) * (pcmsg.point_step),
-                      0x00);
-    uint8_t *ptr = pcmsg.data.data();
-    for (size_t j = 0; j < pcmsg.height; j++)
+    if (fox == 0.0f || foy == 0.0f) {
+        RCLCPP_ERROR(this->get_logger(), "Calibration parameters fx or fy are zero! Using defaults.");
+        fox = 1.0f;
+        foy = 1.0f;
+    }
+
+    // Initialize fields correctly using an index counter instead of .size() to avoid OOB write
+    int field_idx = 0;
+    auto add_field = [&](const std::string& name, int offset, uint8_t datatype, int count) {
+        if (field_idx >= static_cast<int>(pcmsg.fields.size())) {
+            RCLCPP_WARN(this->get_logger(), "Field index overflow! Expected %d fields", field_idx);
+            return;
+        }
+        pcmsg.fields[field_idx].name = name;
+        pcmsg.fields[field_idx].offset = offset;
+        pcmsg.fields[field_idx].datatype = datatype;
+        pcmsg.fields[field_idx].count = count;
+        field_idx++;
+    };
+
+    // Pre-allocate fields to prevent reallocation during loop (though lambda handles it now)
+    pcmsg.fields.resize(4);
+    // RCLCPP_INFO(this->get_logger(), "Setting up point cloud fields...");
+
+    add_field("x", 0, sensor_msgs::msg::PointField::FLOAT32, 1);
+    add_field("y", 4, sensor_msgs::msg::PointField::FLOAT32, 1);
+    add_field("z", 8, sensor_msgs::msg::PointField::FLOAT32, 1);
+    add_field("rgb", 12, sensor_msgs::msg::PointField::UINT32, 1);
+
+    // RCLCPP_INFO(this->get_logger(), "Starting point cloud generation loop.");
+
+    for (size_t j = 0; j < pcmsg.height; j++) {
       for (size_t i = 0; i < pcmsg.width; i++) {
         float cx = (((float)i) - u0) / fox;
         float cy = (((float)j) - v0) / foy;
-        float dst = ((float)depth[j * (pcmsg.width) + i]) / 1000;
+
+        // Safety check: ensure depth index is within payload bounds of the frame struct
+        size_t depth_idx = j * pcmsg.width + i;
+        if (depth_idx >= f->frame_head.frame_data_len - FRAME_HEAD_DATA_SIZE) {
+            RCLCPP_WARN(this->get_logger(), "Depth index %zu out of bounds for payload length. Skipping.", depth_idx);
+            break; // Or continue, depending on desired behavior for corrupted frames
+        }
+
+        float dst = ((float)depth[depth_idx]) / 1000.0f;
+
         float x = dst * cx;
         float y = dst * cy;
         float z = dst;
@@ -251,49 +392,50 @@ private:
         *((float *)(ptr + 0)) = x;
         *((float *)(ptr + 4)) = y;
         *((float *)(ptr + 8)) = z;
-        const uint8_t *color = color_lut_jet[depth[j * (pcmsg.width) + i]];
+
+        // Color lookup with bounds check for LUT index (though depth is uint8_t)
+        const uint8_t *color = color_lut_jet[depth[depth_idx]];
         uint32_t color_r = color[0];
         uint32_t color_g = color[1];
         uint32_t color_b = color[2];
-        *((uint32_t *)(ptr + 12)) =
-            (color_r << 16) | (color_g << 8) | (color_b << 0);
+
+        *((uint32_t *)(ptr + 12)) = (color_r << 16) | (color_g << 8) | (color_b << 0);
+
         ptr += pcmsg.point_step;
       }
-    publisher_pointcloud->publish(pcmsg);
+    }
 
+    // RCLCPP_INFO(this->get_logger(), "Point cloud generation complete. Publishing.");
+
+    // Save point cloud to PLY file
     std::string record_dir = "/record/";
-
-    // Timestamp in milliseconds
-    auto now          = std::chrono::system_clock::now();
+    auto now = std::chrono::system_clock::now();
     auto ms_since_epoch =
-        std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()).count();
 
-    // Filename with timestamp
     std::stringstream filename;
-    filename << record_dir
-             << "pointcloud_"            // prefix
-             << ms_since_epoch           // timestamp (ms)
-             << ".ply";
+    filename << record_dir << "pointcloud_" << ms_since_epoch << ".ply";
 
     savePointCloudAsPLY(pcmsg, filename.str());
 
-    RCLCPP_INFO(this->get_logger(),
-                "Saved pointcloud to %s", filename.str().c_str());
+    double frame_time = this->get_clock()->now().nanoseconds();
+    add_frame_time(frame_time);
 
+    RCLCPP_INFO(this->get_logger(), "Saved pointcloud to %s", filename.str().c_str());
+
+    // Clean up allocated memory
     free(f);
   }
 
-  // Add this function to handle PLY file saving
-  void savePointCloudAsPLY(const sensor_msgs::msg::PointCloud2& pcmsg, const std::string& filename) {
-      // Open file for writing (binary)
-      std::ofstream out(filename, std::ios::out | std::ios::binary);
 
+  void savePointCloudAsPLY(const sensor_msgs::msg::PointCloud2& pcmsg, const std::string& filename) {
+      std::ofstream out(filename, std::ios::out | std::ios::binary);
       if (!out.is_open()) {
           RCLCPP_ERROR(this->get_logger(), "Failed to open %s", filename.c_str());
           return;
       }
 
-      // Write PLY header
       out << "ply\n";
       out << "format binary_little_endian 1.0\n";
       out << "element vertex " << pcmsg.width * pcmsg.height << "\n";
@@ -305,7 +447,6 @@ private:
       out << "property uchar blue\n";
       out << "end_header\n";
 
-      // Write point cloud data
       const uint8_t* ptr = pcmsg.data.data();
       for (size_t j = 0; j < pcmsg.height; j++) {
           for (size_t i = 0; i < pcmsg.width; i++) {
@@ -328,11 +469,61 @@ private:
               ptr += pcmsg.point_step;
           }
       }
-
       out.close();
   }
 
-  const uint8_t color_lut_jet[256][3] = {
+    void check_fps() {
+    auto current_time = this->get_clock()->now().nanoseconds();
+
+    if (current_time - last_fps_print_time < 10e8) { // Only print every 1 second
+      return;
+    }
+
+    last_fps_print_time = current_time;
+
+    RCLCPP_INFO(this->get_logger(),
+                "FPS Tracking: Publishing %.2f FPS (based on last %d frames)",
+                calculate_average_fps(), max_frames_to_track);
+  }
+
+  double calculate_average_fps() {
+    if (recent_frame_times.size() < 2) {
+      return 0.0;
+    }
+
+    // Get the time difference between first and most recent frame in window
+    auto first_time = recent_frame_times.front();
+    auto last_time = recent_frame_times.back();
+
+    double time_diff_seconds = (last_time - first_time) / 1e9;
+
+    if (time_diff_seconds <= 0.0) {
+      return 0.0;
+    }
+
+    // FPS = number of intervals / total time
+    int interval_count = static_cast<int>(recent_frame_times.size()) - 1;
+    double fps = interval_count / time_diff_seconds;
+
+    RCLCPP_INFO(this->get_logger(),
+                "Frame times: %zu frames, Time diff: %.3f s",
+                recent_frame_times.size(), time_diff_seconds);
+
+    return fps;
+  }
+
+  void add_frame_time(double timestamp) {
+    // Add current frame time to deque
+    recent_frame_times.push_back(timestamp);
+
+    // Remove oldest if exceeding max count
+    while (recent_frame_times.size() > static_cast<size_t>(max_frames_to_track)) {
+      recent_frame_times.pop_front();
+    }
+  }
+
+  const uint8_t color_lut_jet[256][3] =
+  {
       {128, 0, 0},     {132, 0, 0},     {136, 0, 0},     {140, 0, 0},
       {144, 0, 0},     {148, 0, 0},     {152, 0, 0},     {156, 0, 0},
       {160, 0, 0},     {164, 0, 0},     {168, 0, 0},     {172, 0, 0},
@@ -396,7 +587,8 @@ private:
       {0, 0, 188},     {0, 0, 184},     {0, 0, 180},     {0, 0, 176},
       {0, 0, 172},     {0, 0, 168},     {0, 0, 164},     {0, 0, 160},
       {0, 0, 156},     {0, 0, 152},     {0, 0, 148},     {0, 0, 144},
-      {0, 0, 140},     {0, 0, 136},     {0, 0, 132},     {0, 0, 128}};
+      {0, 0, 140},     {0, 0, 136},     {0, 0, 132},     {0, 0, 128}
+  };
 };
 
 int main(int argc, char const *argv[]) {
@@ -406,5 +598,4 @@ int main(int argc, char const *argv[]) {
 
   return 0;
 }
-
 

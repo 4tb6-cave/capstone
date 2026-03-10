@@ -20,6 +20,11 @@ frame_t *handle_process(std::string s) {
   frame_t *pf = NULL;
   std::vector<uint8_t>::iterator it;
 
+  // Declare variables here to avoid "crosses initialization" errors with goto later
+  size_t total_size = 0;
+  size_t current_frame_end_offset = 0;
+  size_t remaining_start_index = 0;
+
   vecChar.insert(vecChar.end(), s.cbegin(), s.cend());
 
   if (vecChar.size() < 2) {
@@ -58,15 +63,16 @@ __find_header:
 
   /* max frame payload size */
   if (frame_payload_len > 100 * 100) {
-	DEBUG_FRAME(std::cerr << "frame payload length too large: " << frame_payload_len << std::endl);
-	vecChar.erase(vecChar.begin()); // drop first byte so we don't try to parse same bad data again
+    DEBUG_FRAME(std::cerr << "frame payload length too large: " << frame_payload_len << std::endl);
+    vecChar.erase(vecChar.begin()); // drop first byte so we don't try to parse same bad data again
     goto __find_header;
   }
 
   if (vecChar.begin() + FRAME_HEAD_SIZE + frame_payload_len +
           FRAME_CHECKSUM_SIZE + FRAME_END_SIZE + 1 >
       vecChar.end()) {
-    DEBUG_FRAME(std::cerr << "expected frame payload length: " << frame_payload_len << std::endl);
+    DEBUG_FRAME(std::cerr << "expected frame payload length " << frame_payload_len
+                  << " but buffer size is " << vecChar.size() << std::endl);
     DEBUG_FRAME(std::cerr << "frame payload data is not enough now! wait more data." << std::endl);
     goto __finished;
   }
@@ -86,14 +92,51 @@ __find_header:
     }
   }
 
-  pf = (frame_t *)malloc(sizeof(frame_t) + frame_payload_len);
-  memcpy(pf, &vecChar[0], sizeof(frame_t) + frame_payload_len);
+  // --- Safety Block Start (Fixed for Compilation & Memory Safety) ---
 
-  std::vector<uint8_t>(it + FRAME_HEAD_SIZE + frame_payload_len +
-                           FRAME_CHECKSUM_SIZE + FRAME_END_SIZE - 1,
-                       vecChar.end())
+  total_size = sizeof(frame_t) + frame_payload_len;
+
+  if (total_size < sizeof(frame_t)) {
+      std::cerr << "[ERROR] Calculated total size underflow." << std::endl;
+      return NULL;
+  }
+
+  // Safety Check: Verify malloc success immediately to avoid segfault in memcpy
+  pf = (frame_t *)malloc(total_size);
+  if (!pf) {
+    std::cerr << "[CRITICAL] frame_handle.cc: Memory allocation failed for size "
+              << total_size << ". Returning NULL." << std::endl;
+    vecChar.clear(); // Clear buffer to prevent re-trying same bad state
+    return NULL; // Early return avoids 'goto' crossing initialization issues
+  }
+
+  DEBUG_FRAME(std::cout << "[DEBUG] Copying " << total_size
+              << " bytes from vecChar[0]" << std::endl);
+
+  memcpy(pf, &vecChar[0], total_size);
+
+  current_frame_end_offset = FRAME_HEAD_SIZE + frame_payload_len;
+  remaining_start_index = current_frame_end_offset + FRAME_CHECKSUM_SIZE + FRAME_END_SIZE;
+
+  if (remaining_start_index > vecChar.size()) {
+    std::cerr << "[ERROR] Calculated remaining start index ("
+              << remaining_start_index << ") exceeds vector size ("
+              << vecChar.size() << "). Dropping frame." << std::endl;
+    free(pf); // Clean up allocated memory on error path
+    return NULL; // Early return avoids 'goto' crossing initialization issues
+  }
+
+  DEBUG_FRAME(std::cout << "[DEBUG] Remaining data starts at index "
+              << remaining_start_index
+              << ". Keeping " << (vecChar.size() - remaining_start_index)
+              << " bytes." << std::endl);
+
+  // Create new vector with only the tail data to keep for next parse cycle
+  std::vector<uint8_t>(vecChar.begin() + remaining_start_index, vecChar.end())
       .swap(vecChar);
+
   return pf;
+  // --- Safety Block End ---
 
 __finished:
   return NULL;
