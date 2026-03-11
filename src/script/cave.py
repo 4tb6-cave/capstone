@@ -25,8 +25,8 @@ C_STORAGE_THRES = 0.8       #fractional occupied space where warning begins
 C_DEBOUNCE = 20             #Button debouncing time, in ms
 C_LOOP_TIME = 0.1           #Loop delay, seconds
 C_WORKDIR   = "/etc/cave/src" #location of sources
-C_DOCKER = ["sudo", "docker", "compose", "-f", f"{C_WORKDIR}/record-compose.yml"]
-
+C_DOCKER_UP = ["sudo", "docker", "compose", "-f", f"{C_WORKDIR}/record-compose.yml", "up"]
+C_DOCKER_DOWN = ["sudo", "docker", "compose", "-f", f"{C_WORKDIR}/record-compose.yml", "up"]
 
 #-#-# functions #-#-#
 
@@ -90,7 +90,7 @@ while C_SHUTDOWN == False:
     if C_START_STOP == True and C_START_STOP_D == False:
         # start the docker container for recording
         try:
-            subprocess.run(C_DOCKER.append("up"),   #TODO: detach properly so it can be brought down, LEDs activate
+            subprocess.run(C_DOCKER_UP,   #TODO: detach properly so it can be brought down, LEDs activate
                             cwd=C_WORKDIR,
                             check=True)
             print("Started TOF recording container")
@@ -105,7 +105,7 @@ while C_SHUTDOWN == False:
         led_record_status.off()
         # stop the docker container
         try:
-            subprocess.run(C_DOCKER.append("down"),
+            subprocess.run(C_DOCKER_DOWN,
                             cwd=C_WORKDIR,
                             check=True)
             print("Stopped recording container")

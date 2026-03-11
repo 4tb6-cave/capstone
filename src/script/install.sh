@@ -28,8 +28,8 @@ popd
 #move scripts to non-user directories
 pushd ~/capstone
 git submodule update --init --recursive
-mkdir /etc/cave
-cp -r src/ /etc/cave
+sudo mkdir /etc/cave
+sudo cp -r src/ /etc/cave
 sudo cp src/script/cave.py /usr/bin/cave.py
 popd
 
