@@ -76,9 +76,11 @@ public:
           *pser >> s;
 
           std::cout << "(Attempt " << attempts_counter << "/" << max_retries << ")" << std::endl;
-          // std::cout << "Raw Response: " << s << ", in hex: ";
-          // printHex(s);
-          // std::cout << std::endl;
+#ifdef DEBUG
+          std::cout << "Raw Response: " << s << ", in hex: ";
+          printHex(s);
+          std::cout << std::endl;
+#endif
 
           if (s.find(search_str) != std::string::npos) {
               return true;
@@ -191,9 +193,11 @@ public:
 
       /* do not delete it. It is waiting */
       *pser >> s;
+#ifdef DEBUG
       std::cout << "Raw received (" << s.length() << " bytes): ";
       printHex(s);
       std::cout << std::endl;
+#endif
 
       // --- Setup Publishers & Timer ---
       publisher_depth = this->create_publisher<sensor_msgs::msg::Image>(output_depth_topic, 10);
@@ -277,9 +281,11 @@ private:
     }
 
     // Debug: Print raw response
-    // std::cout << "Raw received (" << s.length() << " bytes): ";
-    // printHex(s);
-    // std::cout << std::endl;
+#ifdef DEBUG
+    std::cout << "Raw received (" << s.length() << " bytes): ";
+    printHex(s);
+    std::cout << std::endl;
+#endif
 
     // Process the frame data
     f = handle_process(s);
@@ -304,10 +310,15 @@ private:
     sensor_msgs::msg::Image msg_depth =
         *cv_bridge::CvImage(header, "mono8", md).toImageMsg().get();
 
-    // RCLCPP_INFO(this->get_logger(), "Publishing: depth:%s", sstream.str().c_str());
+#ifdef DEBUG
+    RCLCPP_INFO(this->get_logger(), "Publishing: depth:%s", sstream.str().c_str());
+#endif
+
     publisher_depth->publish(msg_depth);
 
-    // RCLCPP_INFO(this->get_logger(), "Processing frame: rows=%d, cols=%d", (int)rows, (int)cols);
+#ifdef DEBUG
+    RCLCPP_INFO(this->get_logger(), "Processing frame: rows=%d, cols=%d", (int)rows, (int)cols);
+#endif
 
     sensor_msgs::msg::PointCloud2 pcmsg;
     pcmsg.header = header;
@@ -320,7 +331,10 @@ private:
 
     // Calculate expected data size for logging
     size_t expected_data_size = static_cast<size_t>(rows) * cols * pcmsg.point_step;
-    // RCLCPP_INFO(this->get_logger(), "Allocating point cloud buffer: %zu bytes", expected_data_size);
+
+#ifdef DEBUG
+    RCLCPP_INFO(this->get_logger(), "Allocating point cloud buffer: %zu bytes", expected_data_size);
+#endif
 
     pcmsg.data.resize(expected_data_size, 0x00);
 
