@@ -37,7 +37,6 @@ popd
 #rerun whenever code updated
 pushd /etc/cave/src
 docker compose -f record-compose.yml build
-popd
 
 #startup configuration
 #suspend systemd process if existing
@@ -47,5 +46,6 @@ sudo cp script/cave.service /etc/systemd/system/cave.service
 sudo systemctl start cave
 sudo systemctl enable cave
 #To check the status of the process, use: 'journalctl -f -u cave.service'
+popd
 
 echo 'Installation complete!'

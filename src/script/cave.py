@@ -6,6 +6,7 @@ Nicholas Trimble, 25/02/2026
 """
 
 import os
+import sys
 import time
 import gpiozero as GPIO
 import subprocess
@@ -22,11 +23,10 @@ C_START_STOP = False        #true=running, false=not running
 C_START_STOP_D = False      #previous state to detect change- this is very state-machine-y
 C_SHUTDOWN = False          #True indicates the Pi will shut down on the next cycle
 C_STORAGE_THRES = 0.8       #fractional occupied space where warning begins
-C_DEBOUNCE = 20             #Button debouncing time, in ms
 C_LOOP_TIME = 0.1           #Loop delay, seconds
 C_WORKDIR   = "/etc/cave/src" #location of sources
-C_DOCKER_UP = ["sudo", "docker", "compose", "-f", f"{C_WORKDIR}/record-compose.yml", "up"]
-C_DOCKER_DOWN = ["sudo", "docker", "compose", "-f", f"{C_WORKDIR}/record-compose.yml", "up"]
+C_DOCKER_BASE = ["docker", "compose", "-f", f"{C_WORKDIR}/record-compose.yml"]
+C_SEEN_LOG_LINES = set()    #Cache of seen lines (bounded to prevent memory growth)
 
 #-#-# functions #-#-#
 
@@ -60,6 +60,40 @@ def check_capacity():
         return True
     else:
         return False
+
+def print_subprocess_output(result):
+    """Print stdout and stderr from a subprocess result"""
+    if result.stdout:
+        print(result.stdout, end='')
+    if result.stderr:
+        print(result.stderr, file=sys.stderr, end='')
+
+def stream_docker_logs():
+    """Fetch and print new docker logs, avoiding duplicates with cache"""
+    global C_SEEN_LOG_LINES
+    try:
+        # Use tail to get recent logs
+        result = subprocess.run(C_DOCKER_BASE + ["logs", "--tail", "50"],
+                                cwd=C_WORKDIR,
+                                capture_output=True,
+                                text=True,
+                                timeout=3
+        )
+        if result.stdout:
+            lines = result.stdout.splitlines()
+            # Print only lines we haven't seen before
+            for line in lines:
+                if line not in C_SEEN_LOG_LINES:
+                    print(line)
+                    C_SEEN_LOG_LINES.add(line)
+            
+            # Keep cache bounded - clear if it grows too large
+            if len(C_SEEN_LOG_LINES) > 50:
+                C_SEEN_LOG_LINES.clear()
+    except subprocess.TimeoutExpired:
+        pass
+    except subprocess.CalledProcessError:
+        pass
     
 #-#-# initialization #-#-#
 
@@ -85,14 +119,25 @@ while C_SHUTDOWN == False:
     if check_capacity() == True:
         led_record_error.on() #temporary
         led_storage_ind.on() #check wiring, this LED isnt turning on
+    else:
+        led_storage_ind.off() #check wiring, this LED isnt turning on
+
+
+    #stream logs while recording
+    if C_START_STOP == True:
+        stream_docker_logs()
 
     #'Rising edge', begin recording
     if C_START_STOP == True and C_START_STOP_D == False:
         # start the docker container for recording
+        C_SEEN_LOG_LINES.clear()  # Clear log cache when starting
         try:
-            subprocess.run(C_DOCKER_UP,   #TODO: detach properly so it can be brought down, LEDs activate
-                            cwd=C_WORKDIR,
-                            check=True)
+            result = subprocess.run(C_DOCKER_BASE + ["up", "-d"],
+                                    cwd=C_WORKDIR,
+                                    check=True,
+                                    capture_output=True,
+                                    text=True)
+            print_subprocess_output(result)
             print("Started TOF recording container")
             led_record_status.on()
         except subprocess.CalledProcessError as e:
@@ -101,16 +146,20 @@ while C_SHUTDOWN == False:
 
     #'Falling edge', stop recording
     elif C_START_STOP == False and C_START_STOP_D == True:
-        led_record_error.off() #turn off leds, no longer trying to record
-        led_record_status.off()
         # stop the docker container
         try:
-            subprocess.run(C_DOCKER_DOWN,
-                            cwd=C_WORKDIR,
-                            check=True)
+            result = subprocess.run(C_DOCKER_BASE + ["down"],
+                                    cwd=C_WORKDIR,
+                                    check=True,
+                                    capture_output=True,
+                                    text=True)
+            print_subprocess_output(result)
             print("Stopped recording container")
+            led_record_error.off() #turn off leds, no longer trying to record
+            led_record_status.off()
         except subprocess.CalledProcessError as e:
             print(f"Failed to stop container: {e}")
+        C_SEEN_LOG_LINES.clear()  # Clear log cache when stopping
         os.sync()
 
     #update state
@@ -120,9 +169,27 @@ while C_SHUTDOWN == False:
     time.sleep(C_LOOP_TIME)
 
 #loop broken, time to shut down!
-#TODO: shut down Docker container here as well
+#bring down container
+try:
+    result = subprocess.run(C_DOCKER_BASE + ["down"],
+                            cwd=C_WORKDIR,
+                            check=True,
+                            capture_output=True,
+                            text=True)
+    print_subprocess_output(result)
+    print("Stopped recording container")
+except subprocess.CalledProcessError as e:
+    print(f"Failed to stop container: {e}")
+#sync files
 os.sync()
+#release gpio
+but_record_toggle.close()
+but_shutdown.close()
+led_record_status.close()
+led_record_error.close()
+led_storage_ind.close()
+#countdown
 for s in range(5,0,-1):
     print(s)
     time.sleep(1)
-os.system("systemctl poweroff") #this command may need sudo priveledges, also turning it back on requires powercycling
+os.system("systemctl poweroff") #turning back on will require a power cycle
