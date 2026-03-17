@@ -1,0 +1,50 @@
+% Meeting 23
+	\pagebreak
+	\section*{Mar. 17, 2026}
+	\addcontentsline{toc}{section}{Meeting 24}
+
+	\textbf{C.A.V.E Attendees:} Abdul, Andrew, Nicholas, Dr. Giamou\\
+	\textbf{Notetaker:} Nicholas
+
+	\subsection*{Meeting with Dr. Giamou}
+		\subsubsection*{Agenda}
+			\begin{itemize}
+				\item Post Rev1 catch up and caving information
+			\end{itemize}
+
+		\subsubsection*{Minutes}
+			\begin{itemize}
+				\item getting forms together may not come in time for approval
+				\item conditions may not be favourable for caving on march 23 given the cooling, will have a melt
+				\item SHowing Giamou slides from the rev1 presentation to update on project status
+				\item issues with recording, fusion
+				\item TOFs have low resolution, poor connection stability (likely due to cost)
+				\item Worried about being able to collect cave data
+				\item Have GTSAM working with IMU data, can use either rotations or add a preintegration with velocity, but with kinda of poor results
+				\item Manual loop closure still
+				\item Filtering is iffy sometimes, removes excessive amounts of data
+				\item Pyramidal effect around cone of each point capture
+				\item Once we have cave data, may need to add more manual intervention to tell ICP what results are good or bad
+				\item Giamou agrees on most of demo contract, 1.1 most likely to be difficult. 1.3 remains to be seen
+				\item For a capstone demo, we can do a small room, show that cave worked or didnt work to a certain amount
+				\item Experimental/exploratory, learning from the design and we can present these findings
+				\item Action items:
+				\item March 27 poster deadline
+				\item can add stuff on top of it later, or show on the laptop during expo
+				\item reminded that we cant go to caves alone (without Giamou)
+				\item want to integrate everything on the helmet on thursday (mar 19)
+				\item At this point, more human intervention is needed, or tuning uncertainties/improving preintegration
+				\item Due to offline processing, can randomly initialize. Currently initializing poses to identity, could use open loop ICP estimate
+				\item More sophisticated would be to form optztn problem ass least squares, drop rotation matrices, solve linear system
+				\item sensor quality likely limiting factor at this point
+				\item Covariance matrix for ICP currently random, theres a paper defining it but we could do better- datasheet may provide values for pointcloud
+				\item sensitivity analysis method that adds noise and compares to original ICP result 
+			\end{itemize}
+
+		\subsubsection*{Action Items}
+			\begin{itemize}
+				\item Final integration and testing in a basic environment
+				\item Finish documentation, start on poster
+				\item Go caving
+			\end{itemize}
+
