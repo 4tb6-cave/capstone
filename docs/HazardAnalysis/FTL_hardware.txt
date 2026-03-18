@@ -1,13 +1,9 @@
 flowchart TD
     %% Top event
     T["CAVE safety"]
-    G0{{"OR"}}
     PF["Physical failure"]
-    SF["Software failure"]
 
-    T --> G0
-    G0 --> SF
-    G0 --> PF
+    T --> PF
 
     %% Physical failure OR gate
     G1{{"OR"}}
