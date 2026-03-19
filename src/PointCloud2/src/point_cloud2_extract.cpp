@@ -18,6 +18,8 @@
 #include <pcl/pcl_base.h>
 #include <pcl/features/normal_3d.h>
 
+#include "CLI11.hpp"
+
 // Time stamp conversion function
 double timeStampToSec(const builtin_interfaces::msg::Time& t) {
   return double(t.sec) + 1e-9 * double(t.nanosec);
@@ -59,26 +61,41 @@ typename pcl::PointCloud<Point>::Ptr z_crop(
 	}
 
 int main(int argc, char** argv){
-	if (argc < 2) {
-		std::cerr << "Missing Arguments! --> ./point_cloud2_extract <path/to/bag/folder> [Mean for SOR] [Std. Dev for SOR] [cloud_topic]\n"; // CLI arguments
-			return 1;
-	}
 
-	// Initialize bag path, output folder and topic to observed.	
-	std::string bag_path = argv[1];
-	std::string output_folder = "Extracted_Point_Clouds_(" + bag_path + ")";
-	std::string filtered_folder = "Filtered_Point_Clouds_(" + bag_path + ")";
+	CLI::App app{"Extract point clouds from ROS2 bag"};
 
-	int mean = (argc >= 3) ? std::stoi(argv[2]) : 150;
-	double std = (argc >= 4) ? std::stoi(argv[3]) : 1.0;
-	std::string topic = (argc >= 5) ? argv[4] : "/cloud";
+	std::string bag_path;
+	std::string output_dir;
+	bool disable_sor = false;
+	int sor_num_points = 150;
+	double sor_std_dev = 1.0;
+	std::string topic = "/cloud";
 
+	app.add_option("bag_path", bag_path, "Directory containing ROS2 bag")
+		->check(CLI::ExistingDirectory)->required();
+	app.add_option("output_dir", output_dir, "Directory in which to save output results")
+		->check(CLI::ExistingDirectory)->required();
+	app.add_flag("--disable_sor", disable_sor, "Disable SOR filter")
+		->default_val(false);
+	app.add_option("--sor_num_points", sor_num_points, "Number of points for SOR filter")
+		->default_val(150);
+	app.add_option("--sor_std_dev", sor_std_dev, "Standard deviation for SOR filter")
+		->default_val(1.0);
+	app.add_option("--topic", topic, "Topic name of point cloud messages")
+		->default_val("/cloud");
+
+	CLI11_PARSE(app, argc, argv);
+
+	// Initialize output folders.	
+	std::string output_folder = output_dir + "/Extracted_Point_Clouds";
+	std::string filtered_folder = output_dir + "/Filtered_Point_Clouds";
 	std::filesystem::create_directory(output_folder);
 	std::filesystem::create_directory(filtered_folder);
 
-	std::ofstream time_stamps(bag_path + "_time_stamps.csv");
+	std::string time_stamp_filename = output_dir + "/time_stamps.csv";
+	std::ofstream time_stamps(time_stamp_filename);
 	if (!time_stamps.is_open()) {
-		std::cerr << "Failed to open output file: time_stamps.csv\n";
+		std::cerr << "Failed to open output file: " << time_stamp_filename << std::endl;
 		return 1;
 	}
 	time_stamps << "ID,Time\n" ;
@@ -90,7 +107,7 @@ int main(int argc, char** argv){
 	reader.open(bag_path);
 	std::size_t frame_id = 0;
 
-	std::cout << "SOR Filter with mean: " << mean << std::endl;
+	std::cout << "SOR Filter with std dev: " << sor_std_dev << ", num points: " << sor_num_points << std::endl;
 	
 	while(reader.has_next()) { // Read until message in bag has ended
 		auto bag_msg = reader.read_next();
@@ -101,8 +118,9 @@ int main(int argc, char** argv){
 			rclcpp::SerializedMessage ser_msg(*bag_msg->serialized_data);
 			ser_data.deserialize_message(&ser_msg, msg.get());
 			
-      double t = timeStampToSec(msg->header.stamp);
-      time_stamps << frame_id << "," << t << "\n";
+			double t = timeStampToSec(msg->header.stamp);
+			time_stamps << frame_id << "," << t << "\n";
+
 			// Initialize an empty point cloud to store data from the ROS bag message
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 			//pcl::PointCloud<pcl::Normal>::Ptr normal(new pcl::PointCloud<pcl::Normal>);
@@ -110,8 +128,11 @@ int main(int argc, char** argv){
 
 			pcl::fromROSMsg(*msg, *cloud);
 			
-			auto sor_cloud = sor_filter<pcl::PointXYZRGB>(cloud, mean, std);
-			auto filtered_cloud = z_crop<pcl::PointXYZRGB>(sor_cloud);
+			auto filtered_cloud = z_crop<pcl::PointXYZRGB>(cloud);
+			if (!disable_sor)
+			{
+				*filtered_cloud = *(sor_filter<pcl::PointXYZRGB>(filtered_cloud, sor_num_points, sor_std_dev));
+			}
 			
 			//auto normal_cloud = pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal>();
 			//normal_cloud.setInputCloud(filtered_cloud);

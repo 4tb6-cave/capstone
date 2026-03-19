@@ -90,8 +90,7 @@ int main (int argc, char** argv) {
 
 	CLI::App app{"Point Cloud Assembly"};
 
-	std::string PLY_dir;
-	std::string pose_dir;
+	std::string data_dir;
 	int starting_frame = 0;
 	int ending_frame = 0;
 	float voxel_size = 0.01;
@@ -102,9 +101,7 @@ int main (int argc, char** argv) {
 	bool enable_mls = false;
 	float random_sample = 1;
 
-	app.add_option("PLY_dir", PLY_dir, "Directory containing PLY files")
-		->check(CLI::ExistingDirectory)->required();
-	app.add_option("pose_dir", pose_dir, "Directory containing pose for each frame (4x4 transformation matrix)")
+	app.add_option("data_dir", data_dir, "Directory containing data, including PLY files in Filtered_Point_Clouds and poses")
 		->check(CLI::ExistingDirectory)->required();
 	app.add_option("-s,--start", starting_frame, "Starting frame number")
 		->default_val(0);
@@ -125,6 +122,9 @@ int main (int argc, char** argv) {
 		->check(CLI::Range(0.0, 1.0))->default_val(1);
 
 	CLI11_PARSE(app, argc, argv);
+
+	std::string PLY_dir = data_dir + "/Filtered_Point_Clouds";
+	std::string pose_dir = data_dir + "/poses";
 
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr full_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
 
@@ -152,7 +152,8 @@ int main (int argc, char** argv) {
 		// std::cout << "Transformation for frame " << i << ": \n" << transform << std::endl;
 	
 		// Transform the new point cloud and add to the full cloud
-		pcl::transformPointCloud(*new_cloud, *new_cloud, transform);
+		Eigen::Matrix4d transform_inverse = transform.inverse();
+		pcl::transformPointCloud(*new_cloud, *new_cloud, transform_inverse);
 		*full_cloud += *new_cloud;
 	}
 
@@ -216,13 +217,13 @@ int main (int argc, char** argv) {
 
 		// Reconstruct
 		mls.process(mls_points);
-		pcl::io::savePLYFileBinary("smoothed.ply", mls_points);
+		pcl::io::savePLYFileBinary(data_dir + "/smoothed.ply", mls_points);
 	}
 
 	// Save the aligned point cloud as a .ply file
     // std::filesystem::create_directory("ICP_Aligned_PC");
-	pcl::io::savePLYFileBinary("final_cloud.ply", *sor_cloud);
-    pcl::io::savePLYFileBinary("final_cloud_with_normals.ply", *cloud_with_normal);
+	pcl::io::savePLYFileBinary(data_dir + "/final_cloud.ply", *sor_cloud);
+    pcl::io::savePLYFileBinary(data_dir + "/final_cloud_with_normals.ply", *cloud_with_normal);
     std::cout << "Saved frame.\n";
 
     return 0;
