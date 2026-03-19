@@ -446,7 +446,7 @@ int main(int argc, char **argv)
 	Values initialEstimate;
 	for (int i = starting_frame; i <= ending_frame; i++)
 	{
-		initialEstimate.insert(X(i), Pose3(Rot3::Identity(), Point3(0, 0, 0)));
+		initialEstimate.insert(X(i), Pose3(Rot3::Identity(), Point3(0, 0, 0))); // use icp estimates?
 
 		// for IMU
 		if (enable_preintegration)
