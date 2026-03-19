@@ -1,0 +1,104 @@
+%% Mermaid source for FTA
+
+%% If Editing, some information:
+%% <Name_1> --> <Name_2> refers to the arrow being built from <Name_1> to <Name_2>
+%% {{OR}} if either or is required for failure, {{AND}} if both need to happen simultaneously for failure
+%% If you include a new hazard, put it in the correct section (denoted from the comments)
+%% Once you add a new hazard, update it in the "Styles" Section at the very bottom (just append it to the severity class)
+%% Once you add a new hazard, include a label for it in the labels section before Styles
+%% Similarly include that label in the styles, and then we can update the table on the doc later.
+%% Render on mermaid.ai (go to playground and copypaste the txt file)
+
+graph TD
+    %% Top Event Definition
+    T["CAVE safety"]
+    SF["Software Failure"]
+    
+    T --> SF
+    SF --> MainOR{{OR}}
+
+    %% Secondary Events (From Left to Right)
+
+    MainOR --> SensData[Sensor Data Loss]
+    MainOR --> BattFail[Battery Failure During Exploration]
+    MainOR --> DataProc[Data Processing Errors]
+    MainOR --> StrtIss[Startup Issues]
+
+    %% Sensor Data Integrity Failure Branch (requires all sensors failing)
+    SensData --> SensDataOR{{OR}}
+    SensDataOR --> ToF[ToF Data Loss/Inaccuracy]
+    SensDataOR --> IMU[IMU Data Integrity Failure]
+
+    %% Specific Sensors and their Failure Modes
+    ToF --> ToF1[Calibration drift in temperature]
+    ToF --> ToF2[Dust/moisture accumulation]
+    ToF --> ToF3[Low quality image data]
+    ToF --> ToF4[Sudden Drop or Crash]
+  
+    IMU --> IMU1[Gyroscope drift]
+    IMU --> IMU2[Magnetic interference]
+    IMU --> IMU3[Generic Sensor Drift]
+    IMU --> IMU4[Loss of accuracy for longer recordings]
+
+    %% Battery Failure Errors Branch
+    BattFail --> BattFailOR{{OR}}
+    BattFailOR --> BattFail1[Overestimation of battery capacity]
+    BattFailOR --> BattFail2[Voltage regulation failure]
+
+    %% Data Processing Errors Branch
+    DataProc --> DataProcOR{{OR}}
+    DataProcOR --> DataProc1[Sensor fusion algorithm failures]
+    DataProcOR --> DataProc2[Raspberry Pi overloading]
+    DataProcOR --> DataProc3[Software bugs in data processing code]
+
+    %% Startup Issues Error Branch
+    StrtIss --> StrtIssOR{{OR}}
+    StrtIssOR --> StrtIss1[System does not boot properly]
+    StrtIssOR --> StrtIss2[System does not shut down properly]
+    StrtIssOR --> StrtIss3[System does not restart properly]
+
+
+    %% Labels for the table.
+    ToF1 --> L1[S2R1]
+    ToF2 --> L2[S2R2]
+    ToF3 --> L3[S2R3]
+    ToF4 --> L4[S2R4]
+    IMU1 --> L5[S2R5]
+    IMU2 --> L6[S2R6]
+    IMU3 --> L7[S2R7]
+    IMU4 --> L8[S2R8]
+    BattFail1 --> L9[S2R9]
+    BattFail2 --> L10[S2R10]
+    DataProc1 --> L11[S2R11]
+    DataProc2 --> L12[S2R12]
+    DataProc3 --> L13[S2R13]
+    StrtIss1 --> L14[S2R14]
+    StrtIss2 --> L15[S2R15]
+    StrtIss3 --> L16[S2R16]
+
+    %% Styling
+    classDef orBlock fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef severe fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef high fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef medium fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef low fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef labels fill:#f4e9c8,stroke:#efc750,stroke-width2px
+
+    %% OR Blocks
+    class MainOR,SensDataOR,BattFailOR,DataProcOR,StrtIssOR orBlock;
+
+    %% Critical failures (safety-threatening)
+    class BattFail2,ToF1,ToF4,IMU1,IMU2,DataProc1 severe;
+
+    %% High impact (functionality loss)
+    class DataProc2,DataProc3,ToF2,ToF3,IMU3,IMU4 high;
+
+    %% Moderate impact (operational issues)
+    class StrtIss1,StrtIss2,BattFail1 medium;
+
+    %% Low impact (minor issues)
+    class StrtIss3 low;
+
+    %% Label Styles
+    class L1,L2,L3,L4,L5,L6,L7,L8,L9,L10,L11,L12,L13,L14,L15,L16 labels;
+  
