@@ -13,9 +13,9 @@
 \usepackage{pdflscape}
 
 
-\title{\textbf{Revision 0: \\System Requirements and Hazard Analysis \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
+\title{\textbf{Revision 1: \\System Requirements and Hazard Analysis \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
 \author{Abdul Rahim Khan \\ Andrew Brink \\ Gokberk Yilmaz \\ Nicholas Trimble \\ Tabish Faisal}
-\date{November 16, 2025}
+\date{March 18, 2026}
 
 \begin{document}
 
@@ -32,6 +32,10 @@
 			\textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
 			\midrule
 			November 16, 2025 & All Members & Initial Draft\\
+            \midrule
+            March 18, 2026 & All Members & Update requirements based on V\&V. Remove references to LiDAR. Improve system diagram. \\
+            \midrule
+            March 18, 2026 & Tabish Faisal & Re-worded Hardware requirements to be singular instead of plural (1 ToF instead of 2 ToFs). Updated Software Analysis to better match Hardware Analysis. Included System Requirements that relate to Software and Hardware Hazard Analyses. \\
 			\bottomrule
 		\end{tabularx}
 	\end{table}
@@ -51,7 +55,7 @@
 		The purpose of this document is to outline the system requirements of the C.A.V.E. system, highlighting expected behaviours such as the inputs collected, what type of processing is performed on the data, and outputs generated. It will define all the necessary variables and constants used to achieve this, as well as any notation or technical terms that are needed. There will also be a fault tree analysis (FTA) breakdown of the possible root causes of failure that will inform the significant safety requirements of the system. 
 		
 		\subsection{Scope}
-		The scope of the system includes the development of a portable or wearable 3D data-acquisition device capable of reconstructing a scanned environment with integrated sensors and processing algorithms. The system records sequential point clouds from the Time-of-Flight sensors, fuses IMU orientation data and processes the collected data to generate an accurate and reliable 3D scan of the environment. This scope covers the areas of data capture, pre-processing, point cloud registration, as well as hardware and software integration.
+		The scope of the system includes the development of a portable or wearable 3D data-acquisition device capable of reconstructing a scanned environment with integrated sensors and processing algorithms. The system records sequential point clouds from the Time-of-Flight sensor, fuses IMU orientation data and processes the collected data to generate an accurate and reliable 3D scan of the environment. This scope covers the areas of data capture, pre-processing, point cloud registration, as well as hardware and software integration.
 		
 	\section{Project Definitions \& Variables}
 	
@@ -63,8 +67,6 @@
 			\textbf{Term} & \textbf{Definition} \\
 			\midrule
 			IMU & Inertial Measurement Unit $\rightarrow$ Provides acceleration and rotational data\\
-			\midrule
-			LiDAR & Light Detection and Ranging $\rightarrow$ A sensor that uses a rotating laser to measure distances to objects\\
 			\midrule
 			Point Cloud & A collection of coordinate points in 3D space\\
 			\midrule
@@ -90,8 +92,6 @@
 			\midrule
 			M\_imu\_magnet & Change in magnetic field  & Tesla tuple $(T_{x},T_{y},T_{z})$  & Additional frame rotation reference \\
 			\midrule
-			M\_lidar & 2D Li-DAR scan of the environment & Tuple of distance in metres and angle in degrees & Long range slice of the environment to aid convergence \\
-			\midrule
 			M\_start\_stop & User toggle enabling or disabling the system & Boolean, true == on & Allow user control of starting and stopping a mapping session \\
 			\midrule
 			M\_SOC & Remaining battery percentage & Percentage of total charge (\%) & Estimate remaining time available for mapping \\
@@ -103,8 +103,6 @@
 			C\_record\_remain & User facing indicator to show how long recording can continue for, given M\_SOC and M\_storage & Integer in the form MM:SS & Inform user how much longer they can record \\
 			\midrule
 			C\_point\_cloud & Final point cloud or 3D representation of the merging of all captured data & Point cloud; array of X,Y,Z tuples & Main product of the device, 3-dimensional representation of the mapped area (cave)\\
-			\midrule
-			C\_confidence & Indicator of the quality of the C\_point\_cloud representing the proportion of successfully merged capture instants &  Percentage (\%) & Show how well C\_point\_cloud represents the captured area \\
 			\bottomrule
 			\caption{Variables and its Description}
 		\end{tabularx}
@@ -142,7 +140,7 @@
 			
 			\begin{figure}[H]
 				\centering
-				\includegraphics[width=0.9\textwidth]{images/SystemBoundaries.jpeg}
+				\includegraphics[width=0.9\textwidth]{images/system_diagram.png}
 				\caption{Representation of System Boundaries}
 				\label{fig:system}
 			\end{figure}
@@ -164,15 +162,15 @@
 			\toprule
 			\multicolumn{2}{c}{\textbf{Behavioural}} \\
 			\toprule
-			\textbf{RB1:} The device will produce a point cloud C\_point\_cloud representing the physical surfaces mapped by the sensors (M\_tof\_data, M\_lidar\_data) while recording is enabled (M\_start\_stop == true).  & Low - this is a core functionality of the device. \\
+			\textbf{RB1:} The device will produce a point cloud C\_point\_cloud representing the physical surfaces mapped by the sensor (M\_tof\_data) while recording is enabled (M\_start\_stop == true).  & Low - this is a core functionality of the device. \\
 			\midrule
-			\textbf{RB2:} The confidence in the accuracy of C\_point\_cloud shall be represented by C\_confidence  &  Possible - It may be hard to produce a useful measure of C\_confidence. \\
+			\textbf{RB2:} \textit{The confidence in the accuracy of C\_point\_cloud shall be represented by C\_confidence}  &  This requirement has been removed. See the Verification and Validation document for more details. \\
 			\midrule
 			\textbf{RB3:} C\_record\_status toggles between indicating recording and standby when M\_start\_stop is toggled by the user. If the system encounters an error it cannot recover from, it must display an error status on C\_record\_status.  & Low - this is a basic error communication. \\
 			\midrule
 			\textbf{RB4:} C\_record\_time will display remaining available recording time by taking the minimum of M\_SOC/const\_power\_rate and M\_storage\_left/const\_datarate.  &  Low - Important to achieve for ease of use by the operator. \\
 			\midrule
-			\textbf{RB5:} The system shall maintain a C\_confidence $>$ 50\% in little to no visible light conditions.  &  Possible - This is a core function but the exact confidence measurement could change. \\
+			\textbf{RB5:} The quality of the point cloud produced by the system must be independent of all external light.  &  Possible - This requirement has already been modified once, and is unlikely to change further. \\
 			\toprule
 			\multicolumn{2}{c}{\textbf{Timing}} \\
 			\toprule
@@ -185,6 +183,18 @@
 			\textbf{RE1:} The portable device shall not require an active internet connection to achieve the behavioural requirements RBX.  & Low - Core function, must potentially operate underground. \\
 			\midrule
 			\textbf{RE2:} The hardware should minimize encumbrance of the user to ensure exploration is not inhibited.  & Low - Important for ease of use. \\
+            \midrule
+            \textbf{RE3:} The IMU sensors data should be accurate within the accepted range. & Low - Direct requirement to mitigate Hazards S2R5-S2R8 \\ 
+            \midrule
+            \textbf{RE4:} The ToF sensor data should be accurate within the accepted range. & Low - Direct requirement to mitigate Hazards S2R1-S2R4 \\
+            \midrule
+            \textbf{RE5:} The sensor fusion should be accurate within the accepted range. & Low - Direct requirement to mitigate Hazard S2R11 \\ 
+            \midrule
+            \textbf{RE6:} Battery should be operating in nominal condition, without excess power draw and properly tracked and regulated capacity. & Low - Direct requirement to mitigate Hazards H2R1, H2R2, S2R9 and S2R10 \\
+            \midrule
+            \textbf{RE7:} Side buttons for powering on should work as expected. & Low - Direct requirement to mitigate hazards S2R14-S2R16 \\
+            \midrule
+            \textbf{RE8:} All hardware components shall be properly connected together. & Low - Direct requirement to mitigate hazards H2R5-H2R10, H2R13, H2R14, H2R15, H2R18, H2R21, and H2R26 \\
 			\bottomrule
 			\caption{Requirement and its Likeliness to Change}
 		\end{tabularx}
@@ -197,7 +207,7 @@
 				\begin{landscape}
 					\begin{figure}
 						\hspace{\fill}
-						\includegraphics[width=1.5\textwidth]{images/FTA}
+						\includegraphics[width=1.5\textwidth]{images/FTASoftware.png}
 						\hspace{\fill}
 						\caption{FTA of the software components in the system}
 						\label{fig:ftaS}
@@ -222,6 +232,38 @@
 				\toprule
 				\textbf{Hazard ID} & \textbf{Description} & \textbf{Severity} & \textbf{Response Strategy} & \textbf {Mitigation Plan} \\ 
 				\hline 
+                \textbf{S2R1} & Calibration drift in temp & Severe & Mitigate & Ensure temperatures remain in nominal range \\
+                \hline
+                \textbf{S2R2} & Dust \& moisture accumulation & High & Mitigate & Proper housing for IMU to limit dust and moisture penetration \\
+                \hline
+                \textbf{S2R3} & Low quality image data & High & Mitigate & Limited from the quality of the ToF sensor itself. Ensure it doesn't hinder the overall product too much \\
+                \hline
+                \textbf{S2R4} & Sudden drops or crashes & Severe & Avoid & Ensure we don't run too long sessions with risk of losing all acquired data \\
+                \hline
+                \textbf{S2R5} & Gyroscope drift & Severe & Mitigate & Account for potential drift in code or ensure drift doesn't affect accuracy to a noticeable degree \\
+                \hline
+                \textbf{S2R6} & Magnetic interference & Severe & Mitigate & Ensure no strong magnets are around the IMU \\
+                \hline
+                \textbf{S2R7} & Generic sensor drift & High & Mitigate & Re-calibrate the IMU often to reduce any general drift  \\
+                \hline
+                \textbf{S2R8} & Loss of accuracy for long recordings & High & Avoid & Run shorter sessions to keep IMU as accurate as possible \\
+                \hline
+                \textbf{S2R9} & Overestimation of battery capacity & Medium & Avoid & Take battery calculations directly from the source and operate the system as if its 5\% less (if it reads 95\% , assume 90\%) \\
+                \hline
+                \textbf{S2R10} & Voltage regulation failure & Severe & Mitigate & Ensure robust software checks such that this doesn't occur \\
+                \hline
+                \textbf{S2R11} & Sensor fusion algorithm failure & Severe & Mitigate & Proper testing and verification of the fusion algorithms before deployment \\
+                \hline
+                \textbf{S2R12} & Raspberry Pi overloading & High & Avoid & Make sure what we are running is well within the limitations of the Pi \\
+                \hline
+                \textbf{S2R13} & Software bugs in data processing code & High & Mitigate & Remove all sources of bugs to the best of our abilities such that it won't impede the safety of the device \\
+                \hline
+                \textbf{S2R14} & System does not boot properly & Medium & Avoid & Ensure foolproof solution to booting \\
+                \hline
+                \textbf{S2R15} & System does not shut down properly & Medium & Avoid & Ensure foolproof solution to shutting down \\
+                \hline
+                \textbf{S2R16} & System does not restart properly & Low & Avoid & Rigorous testing to make sure it restarts as expected \\
+                \hline
 				\textbf{H2R1} & The battery overheats & High & Mitigate & Proper cooling, proper rated battery \\  
 				\hline
 				\textbf{H2R2} & Battery punctured & High  & Avoid  & Proper casing, kept in a place unlikely to get impacted \\
@@ -258,11 +300,11 @@
 				\hline
 				\textbf{H2R18} & Wearable device poorly constructed & Low  & Avoid  & Proper simulation before printing, as well as rigorous testing to make sure it's constructed well \\ 
 				\hline
-				\textbf{H2R19} & Sensors incorrectly positioned & Low  & Avoid  &  Mirror sensor positions so that weight is balanced\\ 
+				\textbf{H2R19} & Sensor incorrectly positioned & Low  & Avoid  &  Mirror sensor positions so that weight is balanced\\ 
 				\hline
-				\textbf{H2R20} & Too much allowed movement (for sensors) & Low & Avoid  & Limit degrees of freedom to 0 or 1 for each sensor \\ 
+				\textbf{H2R20} & Too much allowed movement (for sensor) & Low & Avoid  & Limit degrees of freedom to 0 or 1 for each sensor \\ 
 				\hline
-				\textbf{H2R21} & Sensors Loose & Medium  & Avoid  & Proper machining such that the sensors fit snugly, without enough space to wiggle around. \\ 
+				\textbf{H2R21} & Sensor Loose & Medium  & Avoid  & Proper machining such that the sensor fit snugly, without enough space to wiggle around. \\ 
 				\hline
 				\textbf{H2R22} & Person in incorrect position & Low  & Accept  & Explain to the user how to be properly angled, but accept there will be some human error in the beginning \\ 
 				\hline

@@ -24,9 +24,9 @@
 }
 
 
-\title{\textbf{Revision 0: \\Validation and Verification \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
+\title{\textbf{Revision 1: \\Validation and Verification \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
 \author{Abdul Rahim Khan \\ Andrew Brink \\ Gokberk Yilmaz \\ Nicholas Trimble \\ Tabish Faisal}
-\date{February 10, 2026}
+\date{March 20, 2026}
 
 \begin{document}
 	
@@ -44,6 +44,10 @@
 			February 1, 2026 & All Members & Initial Draft\\
 			\midrule
 			February 10, 2026 & All Members & Finished Document\\
+            \midrule
+            March 18, 2026 & Berk Yilmaz & Update hyperlinks \newline Update pass/fail criteria for tests \newline Add tests for previously untested requirements \\
+            \midrule
+            March 20, 2026 & Tabish Faisal & Included new hardware requirements from Analysis into V\&V \\
 			\bottomrule
 		\end{tabularx}
 	\end{table}
@@ -92,7 +96,7 @@
 	The purpose of this document is to validate and verify that the project requirements are feasible and achieve the objectives laid out in the contract. This serves as a checkpoint in the development process where we assess whether our software and hardware are capable of fulfilling the project requirements. The verification process provides a set of pass/fail tests which the current revision is tested against to determine requirement completion.
 	
 	\subsection{Scope}
-	This validation and verification encompass the entire C.A.V.E. design, including software, electrical, and mechanical components. Requirements are defined in \href{https://github.com/4tb6-cave/capstone/blob/main/docs/HazardAnalysis/HazardAnalysis.pdf}{Revision 0: Requirements and Hazard Analysis}. The scope covers all the behavioural, timing, and software/hardware requirements tied the system. Additionally, this document addresses the modifications to the original requirements based on the implementation experience and feasibility checks conducted during the validation process.
+	This validation and verification encompass the entire C.A.V.E. design, including software, electrical, and mechanical components. Requirements are defined in \href{https://github.com/4tb6-cave/capstone/blob/main/docs/HazardAnalysis/HazardAnalysis.pdf}{Revision 1: Requirements and Hazard Analysis}. The scope covers all the behavioural, timing, and software/hardware requirements tied the system. Additionally, this document addresses the modifications to the original requirements based on the implementation experience and feasibility checks conducted during the validation process.
 	
 	\section{Validation} 
 	
@@ -189,8 +193,55 @@
 	\end{exampleblock}
 	
 	The entire device weighs less than two kilograms, as well as having a low profile, which mitigates any form of hinderance to the user it can cause.
-	
-	
+
+    \subsubsection{RE3}
+
+    \begin{exampleblock}
+        The IMU sensors data should be accurate within the accepted range
+    \end{exampleblock}
+
+    The data pulled from the IMU are within our threshold of accuracies to ensure the results are accurate within the limit of which it doesn't adversely affect the end product.
+    
+    \subsubsection{RE4}
+
+    \begin{exampleblock}
+        The ToF sensor data should be accurate within the accepted range
+    \end{exampleblock}
+
+    The Time-of-Flight sensors are accurate to the degree of the devices specifications, which is more than sufficient to reach our required accuracy without hindering the end result.
+    
+    \subsubsection{RE5}
+
+    \begin{exampleblock}
+        The sensor fusion should be accurate within the accepted range.
+    \end{exampleblock}
+
+    The IMU \& ToF sensors communicate to a degree where inaccurate results are ignored, and it only accepts the fusion if it is accurate enough.
+    
+    \subsubsection{RE6}
+
+    \begin{exampleblock}
+        Battery should be operating in nominal condition, without excess power draw and properly tracked and regulated capacity.
+    \end{exampleblock}
+
+    This is showcased by using the battery's internal percentage reading as the assumed value, and doing operations assuming the battery is actually slightly lower than that value. Power draw is regulated and controlled by both code and the pack itself.
+    
+    \subsubsection{RE7}
+    
+	\begin{exampleblock}
+        Side buttons for powering on should work as expected.
+    \end{exampleblock}
+
+    Physical tests and implementations to ensure that there are no issues with the buttons.
+
+    \subsubsection{RE8}
+
+    \begin{exampleblock}
+        All hardware components shall be properly connected together.
+    \end{exampleblock}
+
+    All electrical components are soldered where necessary, and a firm housing ensures the sensors and Pi are connected properly. The wires are also strong and taut enough to not snap off or break.
+    
 	\section{Verification}
 	
 	%**Hard set of tests to check the requirements meet a certain level of performance. All tests must either pass or fail based on a threshold 
@@ -208,19 +259,23 @@
 		T-RB1-0 & Record data from ToF and IMU. Fuse data and pass oriented through ICP algorithm which outputs final point cloud. & Point cloud where the environment/scene can be easily recognized & Fail & Scan is not easily recognizable, although the results show some promise. See figures in appendix.
 		\\
 		\midrule
-		T-RB1-1 & Record data from ToF and IMU on to Raspberry Pi for duration of 10 minutes & Data is successfully recorded and no data is lost & Fail & USB errors in TOF sensor communication cause recording to fail after about 1 minute
+		T-RB1-1 & Record data from ToF and IMU on to Raspberry Pi for duration of 10 minutes & Data is successfully recorded and no data is lost & Pass & The USB interface drops out after around a minute. Switching to UART fixed this.
 		\\
 		\midrule
 		T-RB2-0 & - & - & - & Requirement removed 
 		\\
 		\midrule
-		T-RB3-0 & Press button 1 after system power on & U7, U10 illuminates; recording starts & Fail & U7 illuminates, U10 and recording pending software integration. Button press recognized.
+		T-RB3-0 & Press button 1 after system power on & U7, U10 illuminates; recording starts & Pass & U7 illuminates, U10 and recording software integration complete.
 		\\
 		\midrule
-		T-RB3-1 & Press button 2 after system power on & U8 illuminates & Pass & No software interaction yet. LED overly bright 
+		T-RB3-1 & Press button 2 after system power on & U8 illuminates & Pass & LED overly bright
 		\\
 		\midrule
-		T-RB4-0 & & & &
+		T-RB4-0 & During operation, create a very large file such that the total used space on the SD card is $>$C\_STORAGE
+	\_THRES & Red error LED illuminates & Pass & We initially had two LED's, one for capacity and one for other warnings/errors. One of the LED's are not working with our hardware, so both cases turn on the same LED.% which LED?
+		\\
+		\midrule
+		T-RB4-1 & Press power button on power bank & Power bank displays battery percentage on 7-segment display & Pass & None
 		\\
 		\midrule
 		T-RB5-0 & Use TOF sensor with the same scene in good lighting and poor lighting conditions & All point clouds produced are practically identical & Pass & See pictures of test in appendix \\
@@ -250,6 +305,18 @@
 		T-RE2-0 & Measure the overall weight of the design & The entire system should be under 2 kg & Pass & Total Mass of all components is around 0.5-0.7 kg: Helmet, Raspberry Pi, Sensors \\
 		\midrule
 		T-RE2-1 & Traverse a fixed location at a fixed path with and without the equipment & It should feel the exact same with and without everything worn, or at least not hinder mobility by a good margin & - & This is difficult to empirically decide due to it being opinionated and different for other users, but a general gist is needed. \\
+        \midrule 
+        T-RE3-0 & Calibrate the IMU sensor to a specific spatial position. Run dry tests and move it and see if the output from it matches the expected values (if its moved by 40 degrees in the XY plane it should show that within an acceptable range) & It is expected that the values will fall within that range which is an acceptable accuracy range & Pass & None \\
+        \midrule
+        T-RE4-0 & Match the raw ToF sensor data to the physical world and see if it matches the positions up to a high accuracy. This can be done through taking a picture of a surface, and then positioning the ToF spatially the same as the camera. & It is expected that what is displayed on the raw ToF sensor data will be a 1:1 match to the image displayed on the camera & Pass & This is something we've seen every time the ToF sensor is used to scan anything. \\
+        \midrule
+        T-RE5-0 & Similar to T-RE4-0, we'd take a picture of the real world, and then simultaneously record the ToF sensor data and the IMU data to see if they match with each other (if IMU has different values, it should be recognizable in the ToF, showcased in the fusion). & The fusion should be recognizable, with the ICP algorithm running with raw ToF information providing a worse quality image than the algorithm that fuses both the ToF and IMU data & - & Due to algorithm and fusion limitations we can't confirm how accurate it is, but the expectation is that the quality is better \& that it is within an acceptable accuracy range. \\
+        \midrule
+        T-RE6-0 & Drain the battery to near 0\% and see if the system will attempt to run. Ensure that the minimum battery capacity required is sufficient to run everything for a normal period. For the second part, ensure every part of the system is running (ToF, IMU, any algorithms) to emulate maximum expected power draw. & The battery should not run if the battery capacity is too low. The battery should also not pop a fuse or break when handling the power draw. It also should not get unreasonably hot. & Pass & None \\
+        \midrule
+        T-RE7-0 & Pressing the power button only, pressing both buttons simultaneously. Any other odd/possible combination of button presses and letting go at differing times. & The first press should turn it on if its off. The second and any number of presses should not turn it off until after the required time passes. Holding it for longer should either do nothing or restart the system. & Pass & None \\
+        \midrule
+        T-RE8-0 & Test each component at a higher than normal stress it would have. This would include tugging at the wires normal and perpendicular, trying to de-attach the mounting mechanism from the helmet, and separately trying to take the sensors off,  & Nothing should come off, and everything should stay in place regardless of the extra than intended force & Pass & None \\
 		\bottomrule
 		\caption{Verification Tests for Hardware/Software Requirements}
 	\end{tabularx}
@@ -261,12 +328,12 @@
 		\centering
 		\begin{minipage}{0.48\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{Images/Test_RB1_pic.jpg}
+			\includegraphics[width=\textwidth]{images/Test_RB1_pic.jpg}
 			\caption*{(a) Test T-RB1-0 (Environment)}
 		\end{minipage}\hfill
 		\begin{minipage}{0.48\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{Images/Test_RB1_icp.png}
+			\includegraphics[width=\textwidth]{images/Test_RB1_icp.png}
 			\caption*{(b) Test T-RB1-0 (Output of ICP algorithm)}
 		\end{minipage}
 		\caption{Test T-RB1-0}
@@ -274,7 +341,7 @@
 
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\textwidth]{Images/Test_RB3}
+		\includegraphics[width=0.75\textwidth]{images/Test_RB3}
 		\caption{Test T-RB3-0/1}
 	\end{figure}
 
@@ -282,22 +349,22 @@
 		\centering
 		\begin{minipage}{0.48\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{Images/Test_RB5_dark_pic}
+			\includegraphics[width=\textwidth]{images/Test_RB5_dark_pic}
 			\caption*{(a) Test T-RB5-0 (Dark environment)}
 		\end{minipage}\hfill
 		\begin{minipage}{0.48\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{Images/Test_RB5_light_pic}
+			\includegraphics[width=\textwidth]{images/Test_RB5_light_pic}
 			\caption*{(b) Test T-RB5-0 (Light environment)}
 		\end{minipage}
 		\begin{minipage}{0.48\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{Images/Test_RB5_dark_tof}
+			\includegraphics[width=\textwidth]{images/Test_RB5_dark_tof}
 			\caption*{(c) Test T-RB5-0 (Dark TOF capture)}
 		\end{minipage}\hfill
 		\begin{minipage}{0.48\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{Images/Test_RB5_light_tof}
+			\includegraphics[width=\textwidth]{images/Test_RB5_light_tof}
 			\caption*{(d) Test T-RB5-0 (Light TOF capture)}
 		\end{minipage}
 		\caption{Test T-RB5-0}
@@ -307,12 +374,12 @@
 		\centering
 		\begin{minipage}{0.48\textwidth}
 			\centering
-			\includegraphics[angle=270,width=\textwidth]{Images/Test_T-RE2-0a}
+			\includegraphics[angle=270,width=\textwidth]{images/Test_T-RE2-0a}
 			\caption*{(a) Test T-RE2-0 (Helmet)}
 		\end{minipage}\hfill
 		\begin{minipage}{0.48\textwidth}
 			\centering
-			\includegraphics[angle=270,width=\textwidth]{Images/Test_T-RE2-0b}
+			\includegraphics[angle=270,width=\textwidth]{images/Test_T-RE2-0b}
 			\caption*{(b) Test T-RE2-0 (Raspberry Pi 4)}
 		\end{minipage}
 		\caption{Test T-RE2-0}

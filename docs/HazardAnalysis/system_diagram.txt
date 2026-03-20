@@ -3,35 +3,57 @@ config:
   layout: dagre
 ---
 flowchart LR
- subgraph MONITORED["MONITORED VARIABLES"]
+subgraph MONITORED["MONITORED VARIABLES"]
         M_tof_data(["M_tof_data"])
         M_imu_gyro(["M_imu_gyro"])
         M_imu_accel(["M_imu_accel"])
         M_imu_magnet(["M_imu_magnet"])
-        M_lidar(["M_lidar"])
         M_start_stop(["M_start_stop"])
         M_SOC(["M_SOC"])
         M_storage_left(["M_storage_left"])
   end
- subgraph SYSTEM["SYSTEM"]
-        SENSORS(("Sensors"))
-        DEVICE(("Portable Device"))
-        OFFLINE(("Offline Processing"))
+subgraph SYSTEM["SYSTEM"]
+    subgraph S1["S1: Data Collection"]
+        M1["`**M1**
+            TOF`"]
+        M2["`**M2**
+            IMU`"]
+        M3["`**M3**
+            Data aggregation`"]
+        M4["`**M4**
+            ROS Bag Recorder`"]
+        M5["`**M5**
+            Recording Manager`"]
+    end
+    subgraph S2["S2: Point Cloud Processing"]
+        M6["`**M6**
+            Data Ingest`"]
+        M7["`**M7**
+            Sensor Fusion`"]
+    end
   end
- subgraph CONTROLLED["CONTROLLED VARIABLES"]
+
+subgraph CONTROLLED["CONTROLLED VARIABLES"]
         C_record_status(["C_record_status"])
         C_record_remain(["C_record_remain"])
         C_point_cloud(["C_point_cloud"])
-        C_confidence(["C_confidence"])
   end
-    M_tof_data --> SENSORS
-    M_imu_gyro --> SENSORS
-    M_imu_accel --> SENSORS
-    M_imu_magnet --> SENSORS
-    M_lidar --> SENSORS
-    M_start_stop --> DEVICE
-    M_SOC --> DEVICE
-    M_storage_left --> DEVICE
-    DEVICE --> C_record_status & C_record_remain & OFFLINE
-    SENSORS --> DEVICE
-    OFFLINE --> C_point_cloud & C_confidence
+
+    M_tof_data --> M1
+    M_imu_gyro --> M2
+    M_imu_accel --> M2
+    M_imu_magnet --> M2
+    M_start_stop --> M5
+    M_SOC --> M5
+    M_storage_left --> M5
+    M1 --> |TOF data| M3
+    M2 --> |IMU data| M3
+    M3 --> |Sensor data| M4
+    M5 --> |Enable| M4
+
+    M4 --> |ROS Bag| M6
+    M6 --> |Data| M7
+
+    M5 --> C_record_status & C_record_remain
+    M7 --> C_point_cloud
+ 

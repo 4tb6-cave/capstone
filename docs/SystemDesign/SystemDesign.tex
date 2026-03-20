@@ -14,23 +14,45 @@
 \usepackage[hidelinks]{hyperref}
 
 
-\title{\textbf{Revision 0: \\ System Design \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
+\title{\textbf{Revision 1: \\ System Design \\ \large Group 8 - C.A.V.E: Cave Assessment and Visualization Equipment}}
 \author{Abdul Rahim Khan \\ Andrew Brink \\ Gokberk Yilmaz \\ Nicholas Trimble \\ Tabish Faisal}
-\date{December 22, 2025}
+\date{March 18, 2026}
 \begin{document}
 	\fussy
 	\maketitle
 	~\newpage
+	\setcounter{table}{-1}
+	\begin{table}[hp]
+		\caption{Revision History} \label{TblRevisionHistory}
+		\begin{tabularx}{\textwidth}{llX}
+			\toprule
+			\textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
+			\midrule
+			December 22, 2025 & All Members & Create document for Revision 0 design\\
+            \midrule
+            March 16, 2026 & All Members & Added module M5 and updated uses hierarchy \newline 
+                Added section 1.4 Design Overview \newline
+                Provided additional detail in Module Information, including S1-S2 interface and requirements \\
+			\midrule
+            March 18, 2026 & Berk Yilmaz & Updated ToF sensor interface from USB to UART \\
+            \midrule
+            March 18, 2026 & Andrew Brink & Remove 2D LiDAR from system design\\
+			\bottomrule
+		\end{tabularx}
+	\end{table}
+    ~\newpage
 	\section{Introduction}
 		The goal of this project is to create a portable device that can reliably and accurately reconstruct 3-D mappings of low light environments, such as crevice caves in the Niagara Escarpment, while avoiding the use of expensive technologies and solutions such as a 3-D LiDAR.
 		\subsection{Purpose}
 			This document will outline the specifications and design of the various modules within the device to achieve the requirements previously established. It will also partition these requirements into hardware and software sections and define the necessary interfaces and interactions between components. 
 		\subsection{Scope}
 			The entirety of the device’s design falls under the scope of this document, including the physical design, power delivery, data storage, and interactions between the portable recording device and the offline data processing algorithm. Hardware components will have their dimensions and electrical interfaces specified, and software components will be broken into modules to create well documented interfaces and hierarchical relationships. 
+        \subsection{Design Overview}
+            Two main systems make up the device, with a portable Raspberry Pi connecting to sensors, storing their captured data, and providing interfaces for the user to interact with. This section of the device is referred to as the Data Collection subsystem (S1). After the caving expedition is complete, the Point Cloud Processing subsystem (S2) uses ICP and GTSAM to process the captured point clouds and IMU data to produce 3-D maps of the capture area. Researchers and other cavers can then view this 3-D object to see a representation of the cave. The subsystem division chosen is natural due to the different timing requirements of the tasks they complete. S1 is lightweight and focuses on rapidly capturing the data, S2 occurs after measurement, likely after returning to base from the expedition, so it can be done on more powerful hardware at a slower pace with human intervention if necessary.
 		\subsection{Context Diagrams}
 \begin{figure}[H]
 				\centering
-				\includegraphics[width=0.9\textwidth]{images/SystemBoundaries.jpeg}
+				\includegraphics[width=0.9\textwidth]{images/system_diagram.png}
 				\caption{Representation of System Boundaries}
 				\label{fig:system}
 			\end{figure}
@@ -50,7 +72,6 @@
 				Input & Start button & GPIO & User control over recording (\textit{M\_start\_stop}) \\
 				Input & ToF Data & USB 2.0 & Series of point maps as captured by the time-of-flight sensor (M\_tof\_data) \\
 				Input & IMU & I2C & Various orientation data (M\_imu\_gyro, M\_imu\_accel, M\_imu\_magnet) \\
-				Input & 2D LiDAR & TBD  & Longer distance scans with a wider field-of-view (FOV) to aid in the point cloud merging (M\_lidar) \\
 				Input & Power & USB-PD & 5V, 5A via the RPi Head board - \textit{Refer to Appendix A}. *Note that this is not USB-PD compliant \\
 				Output & Capture Data & rosbag & Database of captured information from a recording session \\
 				Output & Recording status & LED or button toggle & Indicates whether the a device is recording (C\_record\_status) \\
@@ -79,7 +100,7 @@
 				\midrule
 				Input & Power & USB-C & 5V power from the Raspberry Pi \\
 				Input & ToF Camera Captures & 940nm Laser & Depth information produced by the forward camera \\
-				Output & ToF Data & USB 2.0 & 3D point cloud, continous scans (M\_tof\_data) \\
+				Output & ToF Data & UART & 3D point cloud, continous scans (M\_tof\_data) \\
 				\bottomrule
 			\end{tabularx}
 		\subsubsection{Behavior}
@@ -127,33 +148,33 @@
 				\caption{Electrical Interfaces of IMU}
 				\label{fig:IMU_EI}
 			\end{figure}
-	\subsection{2D Li-DAR}
-		This component is available from Studica as the T-Mini LiDAR Kit. 
-		\subsubsection{Inputs and Outputs}
-			\begin{tabularx}{\textwidth}{X X X p{0.45\textwidth}}
-				\toprule
-				\textbf{Direction} & \textbf{Name} & \textbf{Format} & \textbf{Description} \\
-				\midrule
-				Input & Laser Scan & Point Cloud & 360 degree  scan of a single 2-D plane at 6-12Hz, 0.05-12m range \\
-				Input & Power & 5V & Input power from the Raspberry Pi 5 \\
-				Output & LiDAR scan & UART/USB & Digital output of each scan over either USB via a converter or directly through UART \\
-				\bottomrule
-			\end{tabularx}
-		\subsubsection{Behavior}
-			Scans a 2-D slice by rotating 360 degrees with a range of 0.05-12m and 0.54deg resolution. Provides an additional point cloud that will be used to help merge the more detailed 3-D scans from the ToF sensors, improving c\_confidence to conform to RB5. 
-		\subsubsection{Dimensions}
-			Measures 38.6mm wide and long, and 33.9mm tall, plus cable.
-\begin{figure}[H]
-				\centering
-				\includegraphics[width=0.9\textwidth]{images/2DLiDAR.jpeg}
-				\caption{Dimensions of 2D-LiDAR}
-				\label{fig:LiDAR}
-			\end{figure}
-		\subsubsection{Electrical Interfaces}
-			Four pin JST-GH cable carrying 5V, UART Rx, UART Tx, and ground. 
+% 	\subsection{2D Li-DAR}
+% 		This component is available from Studica as the T-Mini LiDAR Kit. 
+% 		\subsubsection{Inputs and Outputs}
+% 			\begin{tabularx}{\textwidth}{X X X p{0.45\textwidth}}
+% 				\toprule
+% 				\textbf{Direction} & \textbf{Name} & \textbf{Format} & \textbf{Description} \\
+% 				\midrule
+% 				Input & Laser Scan & Point Cloud & 360 degree  scan of a single 2-D plane at 6-12Hz, 0.05-12m range \\
+% 				Input & Power & 5V & Input power from the Raspberry Pi 5 \\
+% 				Output & LiDAR scan & UART/USB & Digital output of each scan over either USB via a converter or directly through UART \\
+% 				\bottomrule
+% 			\end{tabularx}
+% 		\subsubsection{Behavior}
+% 			Scans a 2-D slice by rotating 360 degrees with a range of 0.05-12m and 0.54deg resolution. Provides an additional point cloud that will be used to help merge the more detailed 3-D scans from the ToF sensors, improving c\_confidence to conform to RB5. 
+% 		\subsubsection{Dimensions}
+% 			Measures 38.6mm wide and long, and 33.9mm tall, plus cable.
+% \begin{figure}[H]
+% 				\centering
+% 				\includegraphics[width=0.9\textwidth]{images/2DLiDAR.jpeg}
+% 				\caption{Dimensions of 2D-LiDAR}
+% 				\label{fig:LiDAR}
+% 			\end{figure}
+% 		\subsubsection{Electrical Interfaces}
+% 			Four pin JST-GH cable carrying 5V, UART Rx, UART Tx, and ground. 
 
 	\subsection{Battery Pack}
-		The exact pack used may change depending on price, availability, and depending on whether tests with lower input voltages (15V) prove feasible. Current designs are based on the UGREEN Nexode 100W 3-Port 20,000mAh power bank \cite{power_bank} as it provides full 20V PD at a reasonable price and size. 
+		The battery pack being used is the UGREEN Nexode 100W 3-Port 20,000mAh power bank \cite{power_bank} as it provides full 20V PD at a reasonable price and size. 
 		\subsubsection{Inputs and Outputs}
 			\begin{tabularx}{\textwidth}{X X X p{0.45\textwidth}}
 				\toprule
@@ -172,9 +193,9 @@
 
 	\subsection{Helmet Mount}
 		\subsubsection{Inputs and Outputs}
-			This module has no electrical signals or information to process and so has no inputs or outputs. From a mechanical standpoint its inputs are the masses of the TOF sensors, LiDAR, IMU, and Raspberry Pi, and its output is their combined masses loaded on the helmet. 
+			This module has no electrical signals or information to process and so has no inputs or outputs. From a mechanical standpoint its inputs are the masses of the TOF sensors, IMU, and Raspberry Pi, and its output is their combined masses loaded on the helmet. 
 		\subsubsection{Behavior}
-			The purpose of this module is to provide a stable surface for the helmet mounted components to be secured to a caving helmet. Each module must be in a position where it can carry out uninterrupted scans (ie. TOF facing outward, LiDAR has full 360 line of sight). To enable the custom shapes needed to hold various sizes of sensors on a round platform the material will likely be 3-D printed PLA plastic. This material provides sufficient strength for the relatively small and light sensors and allows heat-set inserts to securely screw the each component to it. The primary requirement to conform to is RE2.
+			The purpose of this module is to provide a stable surface for the helmet mounted components to be secured to a caving helmet. The ToF module must be in a position where it can carry out uninterrupted scans, facing directly forward to capture what the user is looking at. To enable the custom shapes needed to hold various sizes of sensors on a round platform the material will likely be 3-D printed PLA plastic. This material provides sufficient strength for the relatively small and light sensors and allows heat-set inserts to securely screw the each component to it. The primary requirement to conform to is RE2.
 		\subsubsection{Dimensions}
 			Final dimensions of the module are to be determined but they must keep the mounted modules as close to the helmet as reasonable, so they should not exceed the approximate 400x300x200mm cube around the user’s head. 
 
@@ -183,9 +204,9 @@
 		\subsection{Module M1: Time-of-Flight (ToF) Sensor}
 		\label{sec:M1}
 			\subsubsection{Module Information}
-				The ToF module is responsible for acquiring depth measurment data from the sensors and outputting time-stamped point cloud data. The module provides raw 3D point cloud frames in continuity that represents the surrounding environment. The hidden design decision in this module are the calibration parameters (i.e. serial access between sensor and the local system) and the calculation process from depth values to 3D point cloud maps. 
+				The ToF module is responsible for acquiring depth measurement data from the sensors and outputting time-stamped point cloud data. The module provides raw 3D point cloud frames in continuity that represent the surrounding environment. The hidden design decision in this module is the calibration parameters (i.e. serial access between sensor and the local system) and the calculation process from depth values to 3D point cloud maps. Achieves requirements RB1, RB5, RT1, RT2, RE2.
 			\subsubsection{Uses Hierarchy}
-			Uses: ROS2 Library/Module \\
+			Uses: TOF Sensor (sect 2.2) \\
 			Used By: Module M5 (Data Aggregation)
 
 			% Black-box -> What the module does, not how
@@ -224,9 +245,9 @@
 		\subsection{Module M2: IMU}
 		\label{sec:M2}
 			\subsubsection{Module Information}
-			The IMU provides inertial data to the Raspberry Pi, which will be used to improve the accuracy of our final model. This module reports the real-time rotation and acceleration data, which is logged for later use. 
+			The IMU provides inertial data to the Raspberry Pi, which will be used to improve the accuracy of our final model. This module reports the real-time rotation and acceleration data, which is logged for later use. Both the raw values of the 3D accelerometer/gyroscope and the on-chip fusion provided by the sensor are captured so that either may be used during point-cloud processing if results need to be tuned. Achieves requirements RB1, RT1, RT2, RE2.
 			\subsubsection{Uses Hierarchy}
-				Uses: None \\
+				Uses: IMU (sect. 2.3) \\
 				Used by: Module M3 (Data Aggregation)
 			\subsubsection{MIS}
 				\begin{itemize}
@@ -244,19 +265,19 @@
 				\begin{itemize}
 					\item sensor\_acceleration
 						\begin{itemize}
-							\item Description: A getter function to read acceleration data form the BNO055 sensor over I2C 
+							\item Description: A getter function to read acceleration data from the BNO055 sensor over I2C 
 							\item Parameters: None 
 							\item Returns: Acceleration data
 						\end{itemize}
 					\item sensor\_gyro
 						\begin{itemize}
-							\item Description: A getter function to read gyroscopic data form the BNO055 sensor over I2C 
+							\item Description: A getter function to read gyroscopic data from the BNO055 sensor over I2C 
 							\item Parameters: None 
 							\item Returns: Gyroscope data
 						\end{itemize}
 					\item sensor\_linear\_acceleration
 						\begin{itemize}
-							\item Description: A getter function to read linear acceleration data form the BNO055 sensor over I2C 
+							\item Description: A getter function to read linear acceleration data from the BNO055 sensor over I2C 
 							\item Parameters: None 
 							\item Returns: Linear acceleration data
 						\end{itemize}
@@ -269,10 +290,10 @@
 		\subsection{Module M3: Data Aggregation}
 		\label{sec:M3}
 			\subsubsection{Module Information}
-			The data aggregation module is responsible for producing time-aligned sensor data and synchronize each ToF point cloud frame with the IMU data to the closest time ($\Delta_{t\_IMU} - \Delta_{t\_point\_cloud}$) it was acquired. 
+			The data aggregation module is responsible for producing time-aligned sensor data and synchronize each ToF point cloud frame with the IMU data to the closest time ($\Delta_{t\_IMU} - \Delta_{t\_point\_cloud}$) it was acquired. This ensures that data processing is made as easy as possible by reducing the phase delay between measurements used in the GTSAM algorithm (M7). Achieves requirement RT1.
 			\subsubsection{Uses Hierarchy}
 				Uses: Module M1 (ToF sensor) and Module M2 (IMU)\\ 
-				Used by: None
+				Used by: Module M4 (Rosbag Recorder)
 			\subsubsection{MIS}
 				\begin{itemize}
 					\item Inputs:
@@ -320,10 +341,10 @@
 		
 		\subsection{Module M4: Rosbag Recorder}
 			\subsubsection{Module Information}
-				This module records the synchronized sensor data packet and stores it as a rosbag file so that it can be used later in the point cloud processing.
+				This module records the synchronized sensor data packet and stores it as a rosbag file so that it can be used later in the point cloud processing. Rosbags are a well-supported datastructure that enable the large swath of captured sensor data to be packaged together in a logical manner and later unpacked by M6. Achieves requirement RE1.
 			\subsubsection{Uses Hierarchy}
 				Uses: Module M3 (Data Aggregation) \\
-				Used By: Module M5 (Data Ingest)
+				Used By: Module M5 Recording Manager, Module M6 (Data Ingest)
 			\subsubsection{MIS}
 				\begin{itemize}
 					\item Input:
@@ -353,16 +374,71 @@
 					\end{itemize}
 			\end{itemize}
 			\subsubsection{Scheduling}
-				Starts upon user input
+				Started by M5 according to M\_start\_stop
+        \subsection{Module M5: Recording Manager}
+			\subsubsection{Module Information}
+				This module runs continuously to respond to user input through M\_start\_stop and also enables the system to be shut down gracefully and the captured information saved. It also checks system storage and alerts the user if recording space is running out. Remaining recording time is not handled by the system; the user can evaluate how long to continue recording based on a combination of the storage full LED on the Raspberry Pi and the battery percentage indicator on the USB-C battery pack. See Appendix A (Sandmaze PCBs) for further information on the physical button and LED layout. Achieves requirements RB3, RB4, RT2, RE2.
+			\subsubsection{Uses Hierarchy}
+				Uses: Module M3 (Data Aggregation), Module M4 (Rosbag Recorder) \\
+				Used By: Module M6 (Data Ingest)
+			\subsubsection{MIS}
+				\begin{itemize}
+					\item Input:
+						\begin{itemize}
+							\item Start button (M\_start\_stop)
+							\item Power off button
+						\end{itemize}
+					\item Output:
+						\begin{itemize}
+							\item Recording status (C\_record\_status)
+                            \item Storage fullness (Remaining time) (C\_record\_remain)
+						\end{itemize}
+				\end{itemize}
+			\subsubsection{MID}
+			Methods:
+			\begin{itemize}
+				\item shutdown\_isr
+					\begin{itemize}
+						\item Description: Enables interrupts for the shutdown button
+						\item Parameters: User actuation of Button 2
+						\item Returns: Sets local state variable C\_SHUTDOWN to TRUE
+					\end{itemize}
+				\item rec\_toggle\_isr
+					\begin{itemize}
+						\item Description: Enables interrupts for the recording toggle button
+						\item Parameters: User actuation of Button 1
+						\item Returns: Toggles the boolean value of local state variable C\_START\_STOP
+					\end{itemize}
+                \item check\_capacity
+					\begin{itemize}
+						\item Description: Calculates storage usage on the device
+						\item Parameters: None
+						\item Returns: TRUE if storage usage exceeds the threshold 80\%, FALSE otherwise
+					\end{itemize}
+				\item print\_subprocess\_result
+					\begin{itemize}
+						\item Description: Routes Docker log outputs to appropriate streams
+						\item Parameters: 'result' struct from subprocess.run()
+						\item Returns: Text output on stdout or stderr as appropriate
+					\end{itemize}
+                \item stream\_docker\_logs
+					\begin{itemize}
+						\item Description: Polls detached Docker process implementing M5 for log information
+						\item Parameters: None
+						\item Returns: Prints new lines of log output (as determined by a small local cache) to stdout
+					\end{itemize}
+			\end{itemize}
+			\subsubsection{Scheduling}
+				Starts upon Pi power-up, ends when S1 is shut down through shutdown\_isr
 	\section{Software Subsystem S2: Point Cloud Processing}
 
-		\subsection{Module M5: Data Ingest}
+		\subsection{Module M6: Data Ingest}
 		\label{sec:M4}
 			\subsubsection{Module Information}
-				The Data Ingest module is part of the Point Cloud Processing subsystem. The responsibility of this module is to take the data previously collected by the Data Collection subsystem, which is stored in the form of a rosbag, and prepare it for use by the other modules in this subsystem. 
+				The Data Ingest module is part of the Point Cloud Processing subsystem. The responsibility of this module is to take the data previously collected by the Data Collection subsystem, which is stored in the form of a rosbag, and prepare it for use by the other modules in this subsystem. The rosbag captured by the mobile device implementing S1 is moved to a personal computer for processing by S2 manually, either over a network (Secure Copy Protocol) or by removing the SD card in the Raspberry Pi and mounting locally. Achieves requirement RE1 (All behavioural requirements were achieved in S1).
 			\subsubsection{Uses Hierarchy}
 				Uses: Module M4 (Rosbag Recorder)\\
-				Used by: Module M6 (Sensor Fusion) 
+				Used by: Module M7 (Sensor Fusion) 
 			\subsubsection{MIS}
 				\begin{itemize}
 					\item Input:
@@ -372,8 +448,7 @@
 					\item Outputs:
 						\begin{itemize}
 							\item IMU messages 
-							\item Data from ToF sensors 
-							\item Data from 2D LiDAR sensor, if applicable
+							\item Data from ToF sensor 
 						\end{itemize}
 				\end{itemize}
 			\subsubsection{MID}
@@ -395,22 +470,18 @@ Methods
 \item Parameters: index of tof camera to access 
 \item Return: Depth image (or point cloud) of data recorded by specified ToF camera with timestamp, or indication of failure if no data is available. 
 	\end{itemize}
-\item get\_lidar\_frame 
-	\begin{itemize}
-\item Parameters: none 
-\item Return: Point cloud of data captured by LiDAR with timestamp, or indication of failure if no data is available. 
-	\end{itemize}
+
 \end{itemize}
 			\subsubsection{Scheduling}
 			There are no scheduling requirements, as this subsystem does not operate in real time. The functions may be called whenever the other modules are ready for the data. 
 			%\subsubsection{Initialization}
 
 
-		\subsection{Module M6: Sensor Fusion}
+		\subsection{Module M7: Sensor Fusion}
 			\subsubsection{Module Information}
-			This module uses the data from the IMU, ToF, and LiDAR sensors to build a 3D point cloud. The IMU data is integrated to provide an initial estimate of the transformation between two ToF captures. This estimate is used to perform point cloud alignment for each new point cloud produced by the ToF cameras. Finally, the LiDAR data is added to the point cloud, to increase the range. 
+			This module uses the data from the IMU and ToF sensors to build a 3D point cloud. The IMU data is integrated to provide an initial estimate of the transformation between two ToF captures. This estimate is used to perform point cloud alignment for each new point cloud produced by the ToF cameras. GTSAM is used to integrate the IMU information with the point clouds and improvement pose estimation. Manual intervention is used to identify start and end frames to allow for loop closure, and additional intervention may be done to help 'steer' the ICP algorithm towards more correct results. Achieves requirement RB2.
 			\subsubsection{Uses Hierarchy}
-				Uses: Module M5 (Data Ingest)\\
+				Uses: Module M6 (Data Ingest)\\
 				Used by: None 
 			\subsubsection{MIS}    
 			\begin{itemize}
@@ -418,7 +489,6 @@ Methods
 			\begin{itemize}
 		\item IMU data 
 		\item ToF data 
-		\item LiDAR data 
 			\end{itemize}
 		\item Outputs 
 			\begin{itemize}
@@ -446,11 +516,6 @@ Methods
 \item Input: two different point clouds with same timestamp from separate cameras 
 \item Output: one point cloud 
 	\end{itemize}
-\item update\_lidar 
-	\begin{itemize}
-\item Description: Add points measured by LiDAR sensor to full point cloud data member 
-\item Input: point cloud from LiDAR (2D) 
-	\end{itemize}
 \item get\_point\_cloud 
 	\begin{itemize}
 \item Description: Get the full point cloud with all data that has been processed so far 
@@ -470,13 +535,12 @@ Design of methods
 \item update\_imu $\rightarrow$ A Kalman Filter (or a variation such as the Error State Kalman filter) is used to predict the movement of the helmet, using acceleration, gyroscope, and magnetometer data. 
 \item update\_tof $\rightarrow$ Use Iterative Closest Point (ICP) algorithm, using an implementation such as that in Point Cloud Library (PCL), to find the transformation between the previous ToF sensor point cloud and the new one. This transformation, together with the timestamp, is stored in tof\_transforms. The estimate of the transformation which has been obtained using update\_imu is used as the initial guess for the ICP algorithm. 
 \item combine\_tof $\rightarrow$ If the two point clouds have the same timestamp, append the points from one point cloud to the other point cloud. 
-\item update\_lidar $\rightarrow$ Add the LiDAR points to point\_cloud, using the transformation matrix that has been calculated for the current timestamp from the update\_tof method. The use of ICP is not required or helpful here, because the points are from a 2D slice which is moving through space in 3D. 
 \item get\_point\_cloud $\rightarrow$ Returns copy of point\_cloud private data member 
 \end{itemize}
 
 \subsubsection{Notes} 
 
-\textit{The work of Chen et al. \cite{chen} has been used as a reference for how the Error State Kalman filter and ToF ICP can be implemented, and their open-source code will be used as a reference as well. This work is limited to one ToF sensor, however, and does not use 2D lidar.}
+\textit{The work of Chen et al. \cite{chen} has been used as a reference for how the Error State Kalman filter and ToF ICP can be implemented, and their open-source code will be used as a reference as well. This work is limited odometry, however, meaning it does not include any loop closure. }
 %\subsubsection{Initialization}
 
 \subsubsection{Scheduling}
@@ -609,7 +673,7 @@ There are no scheduling requirements, as this subsystem does not operate in real
 				\textbf{Direction} & 	\textbf{Name} & 	\textbf{Format} & 	\textbf{Description} \\
 				\midrule
 				Input & Start button & USB Type-C & Power and data connection to the IMU \\
-				Input & ToF Data & USB 2.0 & Series of point maps as captured by the time-of-flight sensor (M\_tof\_data) \\
+				Input & ToF Data & UART & Series of point maps as captured by the time-of-flight sensor (M\_tof\_data) \\
 				Input & PD Input & USB-PD & Standard 20V USB PD sink \\
 				Input & User Buttons  & SMT side mounted buttons (U6/8) & Allows user actuation of GPIO pins- pull down connection \\
 				Output & RPi GPIO & 2x20 pin 2.54mm pitch header & IMU and button connections to Raspberry Pi SBC \\
@@ -754,7 +818,6 @@ This is a pure passthrough acting as a short cable between the RPi Head’s powe
 			\bibitem{rpi_peripherals} Raspberry Pi RP1 Peripherals, \url{https://datasheets.raspberrypi.com/rp1/rp1-peripherals.pdf} (accessed Dec. 22, 2025).
 			\bibitem{tof} Sipeed MaixSense A010 Documentation, \url{https://dl.sipeed.com/shareURL/MaixSense/MaixSense_A010} (accessed Dec. 22, 2025).
 			\bibitem{imu} BNO055 IMU Datasheet, \url{https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/downloads} (accessed Dec. 22, 2025).
-			\bibitem{lidar} YDLIDAR T-mini Plus product page, \url{https://www.ydlidar.com/product/ydlidar-t-mini-plus} (accessed Dec. 22, 2025).
 			\bibitem{power_bank} UGREEN Nexode 100W 3-Port 20,000 mAh Power Bank product page, \url{https://www.staples.ca/products/3119320-en-ugreen-nexode-100w-3-port-20000-mah-power-bank-portable-charger-silver} (accessed Dec. 22, 2025).
 			\bibitem{chen} S. Chen, C.-W. Chang, and C.-Y. Wen, “Perception in the dark; development of a TOF visual inertial odometry system,” Sensors, vol. 20, no. 5, p. 1263, Feb. 2020. doi:10.3390/s20051263 
 		\end{thebibliography}
