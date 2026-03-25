@@ -52,10 +52,10 @@ sudo systemctl disable autocopy
 sudo systemctl stop autocopy
 sudo cp script/autocopy.service /etc/systemd/system/autocopy.service
 sudo cp script/90-autocopy.rules /etc/udev/rules.d
-sudo udevadm control --reload-rules
-sudo udevadm trigger
-sudo systemctl start cave
-sudo systemctl enable cave
+#sudo udevadm control --reload-rules                #dont enable until tested
+#sudo udevadm trigger
+#sudo systemctl start cave
+#sudo systemctl enable cave
 #check status with journalctl -fu autocopy.service
 
 popd
