@@ -1,0 +1,10 @@
+[Unit]
+Description=Copy files to USB device %I
+Requires=%i.mount
+After=%i.mount
+
+[Service]
+ExecStart=/etc/cave/src/script/usbcpy.sh "/media/mscp/%I"
+
+[Install]
+WantedBy=multi-user.target

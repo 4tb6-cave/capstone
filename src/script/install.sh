@@ -46,6 +46,18 @@ sudo cp script/cave.service /etc/systemd/system/cave.service
 sudo systemctl start cave
 sudo systemctl enable cave
 #To check the status of the process, use: 'journalctl -f -u cave.service'
+
+#usb autocopy configuration
+sudo systemctl disable autocopy
+sudo systemctl stop autocopy
+sudo cp script/autocopy.service /etc/systemd/system/autocopy.service
+sudo cp script/90-autocopy.rules /etc/udev/rules.d
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo systemctl start cave
+sudo systemctl enable cave
+#check status with journalctl -fu autocopy.service
+
 popd
 
 echo 'Installation complete!'
