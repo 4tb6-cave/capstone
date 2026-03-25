@@ -287,6 +287,7 @@ TSWLatexianTemp*
 
 # Ignore ros bags
 bag
+*rosbag2*
 
 # Ignore data files
 *.csv
