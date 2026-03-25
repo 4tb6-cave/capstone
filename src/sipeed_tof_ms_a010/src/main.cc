@@ -417,8 +417,8 @@ private:
 
         ptr += pcmsg.point_step;
       }
-	  publisher_pointcloud->publish(pcmsg);
     }
+	publisher_pointcloud->publish(pcmsg);
 
     // RCLCPP_INFO(this->get_logger(), "Point cloud generation complete. Publishing.");
 
