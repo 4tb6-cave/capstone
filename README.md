@@ -42,9 +42,9 @@ Example of how I do this currently:
 ```sh
 colcon build
 
-DIR=
-mkdir $DIRring6
-BAG=rosbag2_2026_03_11-20_53_50
+DIR=results_folder
+mkdir $DIR
+BAG=path/to/bag
 ./build/point_cloud2/imu_extract $BAG $DIR
 
 # make sure imu is sorted by message timestamp (ros bag may have received messages out of order)
@@ -52,21 +52,24 @@ cd $DIR
 { head -n 1 imu.csv; tail -n +2 imu.csv | sort -t, -k1,1g; } > tmp && mv tmp imu.csv
 cd -
 
-./build/point_cloud2/point_cloud_extract $BAG $DIR --topic /cloud_one --disable_sor
+./build/point_cloud2/point_cloud_extract $BAG $DIR --topic /cloud_one --sor_num_points 25 --sor_std_dev 0.5
 
 ./src/scripts/downsample_timestamps.sh $DIR/time_stamps.csv $DIR/t4.csv 4
-mv $DIR/temp $DIR/time_stamps.csv
+mv $DIR/t4.csv $DIR/time_stamps.csv
 
 ./src/scripts/downsample_frames.sh $DIR/Filtered_Point_Clouds/ $DIR/f4 4
 rm -r $DIR/Filtered_Point_Clouds
 mv $DIR/f4 $DIR/Filtered_Point_Clouds
 
 # inspect point clouds and choose starting and ending frame
-f3d $DIR/Filtered_Point_Clouds
+f3d --camera-direction z --camera-azimuth-angle -15 --camera-elevation-angle 15 $DIR/Filtered_Point_Clouds
 
 START=6
 END=140
 ./build/point_cloud2/icp $DIR -s $START -e $END -g
+
+./utils/icp_check.py $DIR
+
 ./build/sensor_fusion/sensor_fusion $DIR --start $START --end $END
 ./build/point_cloud2/assemble_point_cloud $DIR -s $START -e $END --random_sample 0.2 --voxel_size 0.001
 

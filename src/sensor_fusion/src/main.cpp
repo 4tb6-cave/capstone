@@ -288,6 +288,9 @@ bool imu_rotation_prior(NonlinearFactorGraph &graph, std::string imu_filename,
 	Eigen::Quaterniond q, prev_q;
 	bool prev_imu_flag = false;
 
+	Eigen::Quaterniond inv_q;
+	bool got_first_q = false;
+
 	int frame = first_frame;
 
 	std::getline(file, line); // discard first line
@@ -316,6 +319,13 @@ bool imu_rotation_prior(NonlinearFactorGraph &graph, std::string imu_filename,
 				Eigen::Quaterniond q_new = prev_q.slerp(t, q);
 				// std::cout << "Interpolated q for frame " << frame << " time " << std::fixed << std::setprecision(3) << 
 				// 	frame_time[frame] << ": " << q_new << std::endl;
+
+				if (!got_first_q)
+				{
+					inv_q = q_new.inverse();
+					got_first_q = true;
+				}
+				q_new = q_new * inv_q;
 
 				// add factor into graph
 				PoseRotationPrior<Pose3> rot_factor(X(frame), Rot3(q_new), rot_noise_model);
