@@ -49,9 +49,9 @@ class Viewer:
         self.vis.register_key_callback(256, self.quit)  # ESC
 
         self.geometry = None
-        self.load_current()
+        self.load_current(initial=True)
 
-    def load_current(self):
+    def load_current(self, initial=False):
         if self.geometry is not None:
             self.vis.remove_geometry(self.geometry, reset_bounding_box=False)
 
@@ -80,7 +80,7 @@ class Viewer:
 
         self.geometry = pcd1 + pcd2
 
-        self.vis.add_geometry(self.geometry, reset_bounding_box=True)
+        self.vis.add_geometry(self.geometry, reset_bounding_box=initial)
 
     def next(self, vis):
         if self.idx < len(self.transforms) - 1:
