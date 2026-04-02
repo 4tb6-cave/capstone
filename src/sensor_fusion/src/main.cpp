@@ -13,6 +13,7 @@
 #include <gtsam/slam/PoseTranslationPrior.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/GaussNewtonOptimizer.h>
+#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 #include <gtsam/nonlinear/Marginals.h>
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/inference/Symbol.h>
@@ -410,7 +411,7 @@ int main(int argc, char **argv)
 	}
 
 	// TODO: We really need a covariance matrix for each ICP result! this is just a wild guess
-	noiseModel::Diagonal::shared_ptr model = noiseModel::Diagonal::Sigmas(Vector6(0.001, 0.001, 0.001, 0.001, 0.001, 0.001));
+	noiseModel::Diagonal::shared_ptr model = noiseModel::Diagonal::Sigmas(Vector6(0.05, 0.05, 0.05, 0.1, 0.1, 0.1));
 
 
 	// TODO: it would be nice if the files were sorted, for debugging, but it really doesn't matter
@@ -472,13 +473,19 @@ int main(int argc, char **argv)
 	// controlling things like convergence criteria, the type of linear
 	// system solver to use, and the amount of information displayed during
 	// optimization. We will set a few parameters as a demonstration.
-	GaussNewtonParams parameters;
-	// Stop iterating once the change in error between steps is less than this value
-	parameters.relativeErrorTol = 1e-5;
-	// Do not perform more than N iteration steps
-	parameters.maxIterations = 100;
-	// Create the optimizer ...
-	GaussNewtonOptimizer optimizer(graph, initialEstimate, parameters);
+	// GaussNewtonParams parameters;
+	// // Stop iterating once the change in error between steps is less than this value
+	// parameters.relativeErrorTol = 1e-5;
+	// // Do not perform more than N iteration steps
+	// parameters.maxIterations = 100;
+	// // Create the optimizer ...
+	// GaussNewtonOptimizer optimizer(graph, initialEstimate, parameters);
+
+
+	LevenbergMarquardtParams parameters;
+    parameters.setVerbosityLM("SUMMARY");
+    LevenbergMarquardtOptimizer optimizer(graph, initialEstimate, parameters);
+
 	// ... and optimize
 	Values result = optimizer.optimize();
 	result.print("Final Result:\n");
