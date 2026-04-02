@@ -77,6 +77,52 @@ void save_matrix(std::string filename, const Eigen::Matrix4f &matrix)
 	}
 }
 
+
+/**
+ * Function to load matrix from csv file
+ * Returns true on success
+ */
+bool loadMatrix4f(const std::string &filename, Eigen::Matrix4f &matrix)
+{
+	std::ifstream file(filename);
+	if (!file.is_open())
+	{
+		std::cerr << "Failed to open " << filename << std::endl;
+		return false;
+	}
+
+	std::string line;
+	int row = 0;
+
+	while (std::getline(file, line) && row < 4)
+	{
+		std::stringstream ss(line);
+		std::string value;
+		int col = 0;
+
+		while (std::getline(ss, value, ',') && col < 4)
+		{
+			matrix(row, col) = std::stof(value);
+			col++;
+		}
+
+		if (col != 4)
+		{
+			std::cerr << "Invalid data in " << filename << ": too many columns" << std::endl;
+			return false;
+		}
+		row++;
+	}
+
+	if (row != 4)
+	{
+		std::cerr << "Invalid data in " << filename << ": too many rows" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+
 // Global progress monitor (atomic for thread safety)
 std::atomic<int> completed_tasks = 0;
 
@@ -85,7 +131,10 @@ typedef struct icp_config
 {
 	std::string input_dir;
 	std::string output_dir;
+	std::string root_dir;
 	bool enable_gicp;
+	bool enable_initial_guess;
+	bool use_pose;
 } icp_config_t;
 
 void icp_thread(icp_config_t config, std::vector<std::tuple<int, int>> icp_pairs)
@@ -102,6 +151,10 @@ void icp_thread(icp_config_t config, std::vector<std::tuple<int, int>> icp_pairs
 		source_file << config.input_dir << "/frame" << std::setw(5) << std::setfill('0') << source_number << ".ply";
 		target_file << config.input_dir << "/frame" << std::setw(5) << std::setfill('0') << target_number << ".ply";
 		// std::cout << "Opening " << source_file.str() << " and " << target_file.str() << std::endl;
+
+		std::ostringstream transform_file;
+		transform_file << config.output_dir << "/icp" << std::setw(5) << std::setfill('0') << target_number 
+			<< "_" << std::setw(5) << std::setfill('0') << source_number << ".csv";
 
 		// Initialize point clouds
 		pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -125,8 +178,45 @@ void icp_thread(icp_config_t config, std::vector<std::tuple<int, int>> icp_pairs
 		icp->setTransformationEpsilon(1e-8);
 		//icp.setMaximumIterations(10);
 
-		// Perform ICP
-		icp->align(*source_cloud);
+		// load initial guess if enabled, and perform ICP
+		Eigen::Matrix4f guess;
+		if (config.enable_initial_guess)
+		{
+			if (config.use_pose)
+			{
+				std::ostringstream pose_source, pose_target;
+				pose_source << config.root_dir << "/poses/pose" << std::setw(5) << std::setfill('0') << source_number << ".csv";
+				pose_target << config.root_dir << "/poses/pose" << std::setw(5) << std::setfill('0') << target_number << ".csv";
+				Eigen::Matrix4f ps, pt;
+				if (loadMatrix4f(pose_source.str(), ps) && loadMatrix4f(pose_target.str(), pt))
+				{
+					std::cout << "ps: " << ps << "\npt: " << pt << std::endl;
+					guess = pt.inverse() * ps;
+					std::cout << "Guess for frame " << source_number << " -> " << target_number << ": " << guess << std::endl;
+					icp->align(*source_cloud, guess);
+				}
+				else
+				{
+					icp->align(*source_cloud);
+				}
+			}
+			else
+			{
+				if (loadMatrix4f(transform_file.str(), guess))
+				{
+					std::cout << "using initial guess: " << guess << std::endl;
+					icp->align(*source_cloud, guess);
+				}
+				else
+				{
+					icp->align(*source_cloud);
+				}
+			}
+		}
+		else
+		{
+			icp->align(*source_cloud);
+		}
 
 		if (icp->hasConverged()) {
 			// std::cout << "ICP has converged, score: " << icp->getFitnessScore() << std::endl;
@@ -140,9 +230,6 @@ void icp_thread(icp_config_t config, std::vector<std::tuple<int, int>> icp_pairs
 		// std::cout << "Transformation between frames:\n" << transform << std::endl;
 
 		// Save transformation to file
-		std::ostringstream transform_file;
-		transform_file << config.output_dir << "/icp" << std::setw(5) << std::setfill('0') << target_number 
-			<< "_" << std::setw(5) << std::setfill('0') << source_number << ".csv";
 		save_matrix(transform_file.str(), transform);
 
 		completed_tasks++;
@@ -161,6 +248,8 @@ int main (int argc, char** argv) {
 	bool enable_gicp = false;
 	std::vector<std::tuple<int, int>> loop_closure_pair;
 	int num_threads = 0;
+	bool enable_initial_guess = false;
+	bool use_pose = false;
 
 	app.add_option("data_dir", data_dir, "Directory containing data including Filtered_Point_Clouds subdirectory with .PLY files")
 		->check(CLI::ExistingDirectory)->required();
@@ -171,7 +260,8 @@ int main (int argc, char** argv) {
 	app.add_flag("-g,--enable_gicp", enable_gicp, "Enable GICP for registration");
 	app.add_option("-l,--loop_closure_pair", loop_closure_pair, "Add a pair of frames to perform ICP for loop closure");
 	app.add_option("--num_threads", num_threads, "Number of threads to use for ICP (default is equal to number of CPU cores)");
-
+	app.add_flag("-i,--initial_guess", enable_initial_guess, "Enable reading initial guess from transforms directory");
+	app.add_flag("-p,--use_pose", use_pose, "Instead of using initial guess from transforms directory, use guesses from poses directory");
 	CLI11_PARSE(app, argc, argv);
 
 	std::string PLY_dir = data_dir + "/Filtered_Point_Clouds";
@@ -198,6 +288,9 @@ int main (int argc, char** argv) {
 	config.enable_gicp = enable_gicp;
 	config.input_dir = PLY_dir;
 	config.output_dir = output_dir;
+	config.root_dir = data_dir;
+	config.enable_initial_guess = enable_initial_guess;
+	config.use_pose = use_pose;
 
 	std::vector<std::thread> threads;
 	int start = 0;
