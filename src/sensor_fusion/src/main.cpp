@@ -364,6 +364,7 @@ int main(int argc, char **argv)
 	int ending_frame = 0;
 	bool enable_preintegration = false;
 	bool enable_rotation_prior = false;
+	bool use_pose_guess = false;
 
 	app.add_option("data_dir", data_dir, "Directory which contains input data and where results will be stored")
 		->check(CLI::ExistingDirectory)->required();
@@ -374,6 +375,8 @@ int main(int argc, char **argv)
 	app.add_flag("--enable_imu_preint", enable_preintegration, "Enable IMU preintegration")
 		->default_val(false);
 	app.add_flag("--enable_imu_rot", enable_rotation_prior, "Enable IMU rotation prior from precomputed quaternions")
+		->default_val(false);
+	app.add_flag("--use_pose_guess", use_pose_guess, "Use values currently in poses directory to init values")
 		->default_val(false);
 
 	CLI11_PARSE(app, argc, argv);
@@ -411,7 +414,7 @@ int main(int argc, char **argv)
 	}
 
 	// TODO: We really need a covariance matrix for each ICP result! this is just a wild guess
-	noiseModel::Diagonal::shared_ptr model = noiseModel::Diagonal::Sigmas(Vector6(0.05, 0.05, 0.05, 0.1, 0.1, 0.1));
+	noiseModel::Diagonal::shared_ptr model = noiseModel::Diagonal::Sigmas(Vector6(0.005, 0.005, 0.005, 0.1, 0.1, 0.1));
 
 
 	// TODO: it would be nice if the files were sorted, for debugging, but it really doesn't matter
@@ -430,10 +433,10 @@ int main(int argc, char **argv)
 			int node2 = std::stoi(match[2]);
 			if (node1 < starting_frame || node1 > ending_frame || node2 < starting_frame || node2 > ending_frame)
 			{
-				std::cout << "Skipping " << file.path().string() << ", out of range" << std::endl;
+				// std::cout << "Skipping " << file.path().string() << ", out of range" << std::endl;
 				continue;
 			}
-			std::cout << "Reading from " << file.path().string() << ", " << node1 << " --> " << node2 << std::endl;
+			// std::cout << "Reading from " << file.path().string() << ", " << node1 << " --> " << node2 << std::endl;
 
 			// Load transformation matrix from file and place in graph
 			Eigen::Matrix4d transform_matrix;
@@ -451,13 +454,24 @@ int main(int argc, char **argv)
 	if (enable_rotation_prior)
 		imu_rotation_prior(graph, imu_filename, frame_timestamps, starting_frame, ending_frame);
 
-	graph.print("\nFactor Graph:\n"); // print complete graph
+	// graph.print("\nFactor Graph:\n"); // print complete graph
 
 	// Create the data structure to hold the initialEstimate estimate to the solution
 	Values initialEstimate;
 	for (int i = starting_frame; i <= ending_frame; i++)
 	{
-		initialEstimate.insert(X(i), Pose3(Rot3::Identity(), Point3(0, 0, 0))); // use icp estimates?
+		if (use_pose_guess)
+		{
+			Eigen::Matrix4d guess;
+			std::ostringstream transform_file;
+			transform_file << pose_path << "/pose" << std::setw(5) << std::setfill('0') << i << ".csv";
+			loadMatrix4d(transform_file.str(), guess);
+			initialEstimate.insert(X(i), Pose3(guess));
+		}
+		else
+		{
+			initialEstimate.insert(X(i), Pose3(Rot3::Identity(), Point3(0, 0, 0)));
+		}
 
 		// for IMU
 		if (enable_preintegration)
@@ -484,11 +498,12 @@ int main(int argc, char **argv)
 
 	LevenbergMarquardtParams parameters;
     parameters.setVerbosityLM("SUMMARY");
+	parameters.relativeErrorTol = 1e-7;
     LevenbergMarquardtOptimizer optimizer(graph, initialEstimate, parameters);
 
 	// ... and optimize
 	Values result = optimizer.optimize();
-	result.print("Final Result:\n");
+	// result.print("Final Result:\n");
 
 	// 5. Calculate and print marginal covariances for all variables
 	// std::cout.precision(3);

@@ -54,6 +54,11 @@ cd -
 
 ./build/point_cloud2/point_cloud_extract $BAG $DIR --topic /cloud_one --sor_num_points 25 --sor_std_dev 0.5
 
+# instead of using the point clouds saved by sipeed driver, you can use the depth images with new camera parameters
+# using the depth_to_pcd.py script.
+# open3d uses double but pcl only takes float (only necessary if using depth_to_pcd.py script)
+sed -i 's/double/float/g' $DIR/Filtered_Point_Clouds/*
+
 ./src/scripts/downsample_timestamps.sh $DIR/time_stamps.csv $DIR/t4.csv 4
 mv $DIR/t4.csv $DIR/time_stamps.csv
 
@@ -68,7 +73,8 @@ START=6
 END=140
 ./build/point_cloud2/icp $DIR -s $START -e $END -g
 
-./utils/icp_check.py $DIR
+export QT_QPA_PLATFORM=xcb; export DISPLAY=:0; export WAYLAND_DISPLAY=
+./src/utils/icp_check.py $DIR
 
 ./build/sensor_fusion/sensor_fusion $DIR --start $START --end $END
 ./build/point_cloud2/assemble_point_cloud $DIR -s $START -e $END --random_sample 0.2 --voxel_size 0.001

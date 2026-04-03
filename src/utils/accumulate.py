@@ -28,6 +28,11 @@ def load_pose(poses_dir, frame_id):
         raise FileNotFoundError(path)
     return load_transform(path)
 
+def load_odometry(odom_dir, frame_id, prev_T):
+    path = os.path.join(odom_dir, f"icp{frame_id:05d}_{(frame_id + 1):05d}.csv")
+    if not os.path.exists(path):
+        raise FileNotFoundError(path)
+    return prev_T @ load_transform(path)
 
 def time_to_color(t):
     """
@@ -37,13 +42,16 @@ def time_to_color(t):
 
 
 class AccumulatorViewer:
-    def __init__(self, clouds_dir, poses_dir, start, end, voxel_size=None, color_time=False):
+    def __init__(self, clouds_dir, poses_dir, odom_dir, start, end, voxel_size=None, color_time=False, no_gtsam=False):
         self.clouds_dir = clouds_dir
         self.poses_dir = poses_dir
         self.start = start
         self.end = end
         self.voxel_size = voxel_size
         self.color_time = color_time
+        self.no_gtsam = no_gtsam
+        self.odom_dir = odom_dir
+        self.T = np.identity(4)
 
         self.current_frame = start
         self.accumulated = None
@@ -70,12 +78,16 @@ class AccumulatorViewer:
 
         try:
             pcd = load_cloud(self.clouds_dir, self.current_frame)
-            T = load_pose(self.poses_dir, self.current_frame)
+            if self.no_gtsam:
+                if not initial:
+                    self.T = load_odometry(self.odom_dir, self.current_frame, self.T)
+            else:
+                self.T = load_pose(self.poses_dir, self.current_frame)
         except Exception as e:
             print(f"Error: {e}")
             return
 
-        pcd.transform(T)
+        pcd.transform(self.T)
 
         # Optional downsampling
         if self.voxel_size is not None:
@@ -144,19 +156,24 @@ def main():
                         help="Voxel size for downsampling (e.g. 0.01)")
     parser.add_argument("--color-time", action="store_true",
                         help="Color frames by time instead of grey/red")
+    parser.add_argument("--no-gtsam", action="store_true",
+                        help="Don't use gtsam results, only icp odometry")
 
     args = parser.parse_args()
 
     clouds_dir = os.path.join(args.root, "Filtered_Point_Clouds")
     poses_dir = os.path.join(args.root, "poses")
+    odom_dir = os.path.join(args.root, "transforms")
 
     viewer = AccumulatorViewer(
         clouds_dir,
         poses_dir,
+        odom_dir,
         args.start,
         args.end,
         voxel_size=args.voxel,
-        color_time=args.color_time
+        color_time=args.color_time,
+        no_gtsam=args.no_gtsam
     )
     viewer.run()
 

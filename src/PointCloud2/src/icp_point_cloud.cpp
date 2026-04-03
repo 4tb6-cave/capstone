@@ -161,8 +161,15 @@ void icp_thread(icp_config_t config, std::vector<std::tuple<int, int>> icp_pairs
 		pcl::PointCloud<pcl::PointXYZRGB>::Ptr target_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
 
 		// Load .ply from command line argument to point cloud variable 
-		pcl::io::loadPLYFile(source_file.str(), *source_cloud);
-		pcl::io::loadPLYFile(target_file.str(), *target_cloud);
+		if (pcl::io::loadPLYFile(source_file.str(), *source_cloud) < 0) {
+			std::cerr << "Failed to load source: " << source_file.str() << std::endl;
+			continue;
+		}
+
+		if (pcl::io::loadPLYFile(target_file.str(), *target_cloud) < 0) {
+			std::cerr << "Failed to load target: " << target_file.str() << std::endl;
+			continue;
+		}
 
 		// Select type of ICP algorithm for two point clouds
 		std::shared_ptr<pcl::Registration<pcl::PointXYZRGB, pcl::PointXYZRGB>> icp;
@@ -219,7 +226,7 @@ void icp_thread(icp_config_t config, std::vector<std::tuple<int, int>> icp_pairs
 		}
 
 		if (icp->hasConverged()) {
-			// std::cout << "ICP has converged, score: " << icp->getFitnessScore() << std::endl;
+			std::cout << "ICP has converged, score: " << icp->getFitnessScore() << std::endl;
 		}
 		else {
 			std::cout << "ICP failed to converge! source: " << source_number << ", target: " << target_number << ", score: " << icp->getFitnessScore() << std::endl;
