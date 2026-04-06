@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 
+# fully vibe coded
+
 import argparse
 import os
 import numpy as np
 import open3d as o3d
-o3d.core.sycl.enable_persistent_jit_cache()
-import csv
-import time
-from datetime import datetime
-import threading
 
 
 def load_transform(path):
@@ -43,8 +40,21 @@ def time_to_color(t):
     """
     return [t, 1 - abs(t - 0.5) * 2, 1 - t]
 
+
+#!/usr/bin/env python3
+
+import argparse
+import os
+import numpy as np
+import open3d as o3d
+import csv
+import time
+from datetime import datetime
+
+# ... [load_transform, load_cloud, load_pose, load_odometry, time_to_color remain the same] ...
+
 class AccumulatorViewer:
-    def __init__(self, clouds_dir, poses_dir, odom_dir, start, end, voxel_size=None, 
+    def __init__(self, clouds_dir, poses_dir, odom_dir, start, end, voxel_size=None,
                  color_time=False, no_gtsam=False, csv_file=None):
         self.clouds_dir = clouds_dir
         self.poses_dir = poses_dir
@@ -56,24 +66,25 @@ class AccumulatorViewer:
         self.odom_dir = odom_dir
         self.csv_file = csv_file
         self.T = np.identity(4)
-        self.geoName = 0
 
         self.current_frame = start
         self.accumulated = None
         self.timestamps = {}
-        
+
         # Load timestamps from CSV if provided
         if csv_file and os.path.exists(csv_file):
             self.load_timestamps(csv_file)
 
-        print(f"Device API: {o3d.__DEVICE_API__}")
-        print(f"SYCL devices: {o3d.core.sycl.get_available_devices()}")
-
-        app = o3d.visualization.gui.Application.instance
-        app.initialize()
-
-        self.vis = o3d.visualization.Visualizer()
+        self.vis = o3d.visualization.VisualizerWithKeyCallback()
         self.vis.create_window("Map Builder", width=1000, height=800)
+
+        self.ctr = self.vis.get_view_control()
+        self.ctr.set_constant_z_far(10000)
+        self.ctr.set_up([0, 1, 0])
+
+        self.vis.register_key_callback(ord("N"), self.next_frame_manual)  # Manual mode
+        self.vis.register_key_callback(ord("V"), self.next_frame_video)   # Video mode
+        self.vis.register_key_callback(256, self.quit)
 
         self.geometry = None
         self.video_mode = False
@@ -85,16 +96,6 @@ class AccumulatorViewer:
         print(f"Timestamp mode: {'auto' if self.auto_timing else 'disabled'}")
 
         self.add_frame(initial=True)
-
-        thread = threading.Thread(target=self.next_frame_video, args=([self.vis]))
-        thread.daemon = True
-        thread.start()
-
-        # self.vis.setup_camera(60, [0, 0, 0], [1, 1, 1], [0, 1, 0])
-
-        # self.vis.mouse_mode = o3d.visualization.gui.SceneWidget.Controls.FLY
-        # o3d.visualization.gui.Application.instance.add_window(self.vis)
-        o3d.visualization.gui.Application.instance.run()
 
     def load_timestamps(self, csv_path):
         """Load ID and timestamp pairs from CSV file"""
@@ -110,21 +111,67 @@ class AccumulatorViewer:
         if current_id in self.timestamps:
             if self.prev_time is not None:
                 current_ts = self.timestamps[current_id]
-                delay = current_ts - self.prev_time
-                delay *= 10
-                print(delay)
-                return delay
+                return max(0.01, current_ts - self.prev_time)  # Minimum 10ms
         return None
+
+    def color_by_bounding_box(self, pcd, color_by='x', colormap='viridis'):
+        """Color points based on their position within the bounding box"""
+        points = np.asarray(pcd.points)
+        aabb = pcd.get_axis_aligned_bounding_box()
+        min_bound = aabb.get_min_bound()
+        max_bound = aabb.get_max_bound()
+
+        # Get coordinate to color by
+        if color_by == 'x':
+            coord = points[:, 0]
+            min_val, max_val = min_bound[0], max_bound[0]
+        elif color_by == 'y':
+            coord = points[:, 1]
+            min_val, max_val = min_bound[1], max_bound[1]
+        else:  # 'z'
+            coord = points[:, 2]
+            min_val, max_val = min_bound[2], max_bound[2]
+
+        # Normalize to [0, 1]
+        normalized = (coord - min_val) / (max_val - min_val)
+
+        # Apply colormap
+        import matplotlib.pyplot as plt
+        cmap = plt.get_cmap(colormap)
+        colors = cmap(normalized)[:, :3]  # Take RGB, ignore alpha
+
+        pcd.colors = o3d.utility.Vector3dVector(colors)
+        return pcd
 
     def add_frame(self, initial=False):
         if self.current_frame > self.end:
             print("Reached end frame")
             return
 
+        if initial:
+            view_ctl = self.vis.get_view_control()
+            # Create a custom axis-aligned bounding box
+            min_bound = np.array([-0.1, -0.1, -0.1])  # Set your desired min bounds
+            max_bound = np.array([0.2, 0.2, 0.2])    # Set your desired max bounds
+            # Create bounding box geometry
+            bbox = o3d.geometry.AxisAlignedBoundingBox(min_bound, max_bound)
+            self.vis.add_geometry(bbox)
+            self.vis.remove_geometry(bbox, reset_bounding_box=False)
+
+
         print(f"Adding frame {self.current_frame}")
-        print("as")
 
         pcd = load_cloud(self.clouds_dir, self.current_frame)
+        if self.color_time:
+            t = (self.current_frame - self.start) / max(1, (self.end - self.start))
+            color = time_to_color(t)
+            pcd.paint_uniform_color(color)
+        else:
+            # color = [1, 0, 0]
+            # self.vis.update_geometry(geometry)
+            # self.vis.update_renderer()         # mark redraw needed
+            pcd = self.color_by_bounding_box(pcd)
+            pass
         if self.no_gtsam:
             if not initial:
                 self.T = load_odometry(self.odom_dir, self.current_frame, self.T)
@@ -132,59 +179,21 @@ class AccumulatorViewer:
             self.T = load_pose(self.poses_dir, self.current_frame)
 
         pcd.transform(self.T)
-        print("gggg")
 
         if self.voxel_size is not None:
             pcd = pcd.voxel_down_sample(self.voxel_size)
 
-        #if self.color_time:
-        t = (self.current_frame - self.start) / max(1, (self.end - self.start))
-        color = time_to_color(t)
-        #else:
-        #    color = [1, 0, 0]
 
-        pcd.paint_uniform_color(color)
-        print("ghjfghhjgf")
-
-        # Merge
         if self.accumulated is None:
             self.accumulated = pcd
         else:
             self.accumulated += pcd
-        print("fdhgfhjfghjgf")
 
-        # Update visualization
         if self.geometry is not None:
-            print("asdfdfdf")
             self.vis.remove_geometry(self.geometry, reset_bounding_box=False)
-            print("asjhkhjk")
 
         self.geometry = self.accumulated
-
-        # self.geometry = self.accumulated
-        # mat = o3d.visualization.rendering.MaterialRecord()
-        #
-        # # Set basic PBR properties
-        # mat.shader = "defaultLit"
-        # mat.base_color = [1.0, 0.5, 0.2, 1.0]  # RGBA color
-        # mat.base_metallic = 0.0
-        # mat.base_roughness = 0.5
-        # mat.base_reflectance = 0.5
-        # mat.base_clearcoat = 0.0
-        # mat.base_anisotropy = 0.0
-        # mat.emissive_color = [0.0, 0.0, 0.0, 1.0]
-        #
-        # # Set point size for point clouds
-        # mat.point_size = 5.0
-        #
-        # # Set line width for line sets (requires shader = "unlitLine")
-        # mat.line_width = 2.0
-
-        # self.vis.add_geometry(str(self.geoName), pcd, mat)
-        print("asddd")
-        self.vis.add_geometry(self.geometry, reset_bounding_box=False),
-        # self.vis.scene.scene.geometry_shadows(str(self.geoName), True, True),
-        print("asdfdfdf")
+        self.vis.add_geometry(self.geometry, reset_bounding_box=False)
 
         # Update timestamp for delay calculation
         if self.current_frame in self.timestamps:
@@ -194,52 +203,60 @@ class AccumulatorViewer:
         if self.current_frame >= self.end:
             print("Done.")
             return False
-        
+
         self.recolor_all()
         self.current_frame += 1
         self.add_frame()
         return False
 
     def next_frame_video(self, vis):
-        time.sleep(1)
         self.video_mode = True
         print("Video mode enabled - automatic playback")
 
-        start = time.time()
-        delay = self.calculate_delay(self.current_frame + 1)
         while self.current_frame < self.end:
             # Calculate delay based on timestamps (requires CSV logic added previously)
-            end = time.time()
+            delay = self.calculate_delay(self.current_frame + 1)
+            print(delay)
+            start = time.time()
+            while time.time() < start + delay:
+                # time.sleep(delay)
+                self.ctr.set_up([0, 1, 0])
 
-            if start + delay < end:
-                print("dfdfdf")
-                if self.current_frame >= self.end:
-                    break
-                print("sdafgasd")
-                self.recolor_all()
-                self.current_frame += 1
-                print("sdafgahfghgsd")
-                self.add_frame()
-                print("sd")
-                start = time.time()
-                delay = self.calculate_delay(self.current_frame + 1)
-            
+            # print(time.time() - ( start + delay))
+
+            if self.current_frame >= self.end:
+                break
+
+            self.recolor_all()
+            self.current_frame += 1
+            self.add_frame()
+
+            # CRITICAL FIX: Allow the window to update during the loop
+            vis.update_geometry(self.geometry)
+            vis.poll_events()
+            vis.update_renderer()
+
         self.video_mode = False
-#        time.sleep(10000)
         print("Video playback complete.")
+        while True:
+            self.ctr.set_up([0, 1, 0])
         return False
 
     def recolor_all(self):
         if self.accumulated is None:
             return
-        #if not self.color_time:
-        #    self.accumulated.paint_uniform_color([0.7, 0.7, 0.7])
+        # if not self.color_time:
+        #     self.accumulated.paint_uniform_color([0.7, 0.7, 0.7])
 
     def quit(self, vis):
         vis.close()
         return False
 
     def run(self):
+
+        # opt = self.vis.get_render_option()
+        # opt.point_color_option = o3d.visualization.PointColorOption.YCoordinate
+
         self.vis.run()
         self.vis.destroy_window()
 
@@ -275,6 +292,8 @@ def main():
         no_gtsam=args.no_gtsam,
         csv_file=args.csv
     )
+    viewer.run()
+
 
 if __name__ == "__main__":
     main()
