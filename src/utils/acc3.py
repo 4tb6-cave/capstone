@@ -112,13 +112,7 @@ class AccumulatorViewer:
                 return max(0.01, current_ts - self.prev_time)  # Minimum 10ms
         return None
 
-<<<<<<< HEAD
-    def color_by_bounding_box(self, pcd, color_by='x', colormap='viridis'):
-=======
-    # pick cmap from https://matplotlib.org/stable/users/explain/colors/colormaps.html
-
     def color_by_bounding_box(self, pcd, color_by='z', colormap='magma'):
->>>>>>> 12aa0fc (add context for video generation script, change cmap algo)
         """Color points based on their position within the bounding box"""
         points = np.asarray(pcd.points)
         aabb = pcd.get_axis_aligned_bounding_box()
