@@ -2,6 +2,9 @@
 
 # fully vibe coded
 
+# Do the following if under Wayland:
+# export XDG_SESSION_TYPE=x11; export QT_QPA_PLATFORM=xcb; export DISPLAY=:0; export WAYLAND_DISPLAY=
+
 import argparse
 import os
 import numpy as np
@@ -40,9 +43,6 @@ def time_to_color(t):
     """
     return [t, 1 - abs(t - 0.5) * 2, 1 - t]
 
-
-#!/usr/bin/env python3
-
 import argparse
 import os
 import numpy as np
@@ -50,8 +50,6 @@ import open3d as o3d
 import csv
 import time
 from datetime import datetime
-
-# ... [load_transform, load_cloud, load_pose, load_odometry, time_to_color remain the same] ...
 
 class AccumulatorViewer:
     def __init__(self, clouds_dir, poses_dir, odom_dir, start, end, voxel_size=None,
@@ -114,7 +112,13 @@ class AccumulatorViewer:
                 return max(0.01, current_ts - self.prev_time)  # Minimum 10ms
         return None
 
+<<<<<<< HEAD
     def color_by_bounding_box(self, pcd, color_by='x', colormap='viridis'):
+=======
+    # pick cmap from https://matplotlib.org/stable/users/explain/colors/colormaps.html
+
+    def color_by_bounding_box(self, pcd, color_by='z', colormap='magma'):
+>>>>>>> 12aa0fc (add context for video generation script, change cmap algo)
         """Color points based on their position within the bounding box"""
         points = np.asarray(pcd.points)
         aabb = pcd.get_axis_aligned_bounding_box()
